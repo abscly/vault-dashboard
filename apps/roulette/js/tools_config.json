@@ -1,0 +1,26 @@
+[
+    {
+        "name": "ルーレット",
+        "icon": "🎰",
+        "url": "tools/roulette.html",
+        "description": "ランダムにメンバーを選出"
+    },
+    {
+        "name": "AIチャット",
+        "icon": "🤖",
+        "url": "tools/ai_chat.html",
+        "description": "Gemini AIと会話"
+    },
+    {
+        "name": "プロトビルダー",
+        "icon": "🛠️",
+        "url": "tools/proto_builder.html",
+        "description": "AIでアプリ試作"
+    },
+    {
+        "name": "Coming Soon",
+        "icon": "🚧",
+        "url": "#",
+        "description": "新しいツールを追加しよう"
+    }
+]

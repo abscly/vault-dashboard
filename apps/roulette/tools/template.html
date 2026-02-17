@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a1a">
+    <!--
+        ===== 新しいツールのテンプレート =====
+        
+        使い方:
+        1. このファイルをコピーして、好きな名前で tools/ フォルダに保存
+           例: tools/timer.html
+        2. タイトルとアイコンを変更
+        3. メインコンテンツにHTMLとJavaScriptを追加
+        4. js/tools_config.json にツール情報を追記
+    -->
+    <title>テンプレート — AbsCL Portal</title>
+    <!-- 共通CSS（全ツール共通、パスは ../css/ を使う） -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/components.css">
+</head>
+
+<body>
+    <div class="app">
+        <!-- ===== ヘッダー（戻るボタン付き） ===== -->
+        <header class="tool-header">
+            <a href="../index.html" class="back-btn">←</a>
+            <!-- ↓ ツール名を変更 -->
+            <h1 class="tool-title">🔧 ツール名</h1>
+        </header>
+
+        <!-- ===== メインコンテンツ ===== -->
+        <main class="main">
+            <!--
+                ここに好きなHTMLを追加してください。
+                components.css のクラスが使えます:
+                
+                - .btn .btn-primary   → メインボタン
+                - .btn .btn-secondary → サブボタン
+                - .result-display     → 大きな結果表示（円形）
+                - .info-card          → 情報カード
+                - .badge              → 小さなタグ
+                
+                例:
+                <button class="btn btn-primary">実行</button>
+            -->
+            <div class="info-card">
+                <p class="info-card-title">👋 テンプレート</p>
+                <p>ここにツールの内容を作成してください。</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ここにJavaScriptロジックを追加
+    </script>
+</body>
+
+</html>

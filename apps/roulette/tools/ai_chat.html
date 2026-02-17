@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a1a">
+    <title>AIチャット — AbsCL Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <style>
+        /* AIチャット固有のスタイル */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 8px 0;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            animation: fadeInUp 0.3s ease;
+            word-break: break-word;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--accent), #6d28d9);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            background: var(--bg-card);
+            border: 1px solid rgba(124, 58, 237, 0.15);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.ai pre {
+            background: var(--bg-secondary);
+            padding: 8px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.78rem;
+            margin: 6px 0;
+        }
+
+        .message.ai code {
+            font-size: 0.78rem;
+        }
+
+        .message.system {
+            align-self: center;
+            background: transparent;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            padding: 4px;
+        }
+
+        .typing-indicator {
+            align-self: flex-start;
+            padding: 10px 14px;
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: none;
+        }
+
+        .typing-indicator.show {
+            display: block;
+        }
+
+        .typing-indicator span {
+            animation: blink 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* 入力エリア */
+        .input-area {
+            display: flex;
+            gap: 8px;
+            padding: 8px 0 4px;
+        }
+
+        .input-area textarea {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            border-radius: 12px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 0.85rem;
+            resize: none;
+            outline: none;
+            min-height: 42px;
+            max-height: 120px;
+        }
+
+        .input-area textarea:focus {
+            border-color: var(--accent);
+        }
+
+        .send-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #6d28d9);
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.08);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* API Key設定 */
+        .api-setup {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .api-setup input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-card);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 0.85rem;
+            margin: 12px 0;
+            outline: none;
+        }
+
+        .api-setup input:focus {
+            border-color: var(--accent);
+        }
+
+        /* モデル選択 */
+        .model-select {
+            display: flex;
+            gap: 6px;
+            padding: 0 0 4px;
+        }
+
+        .model-option {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            background: var(--bg-card);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .model-option.active {
+            color: var(--accent-bright);
+            border-color: var(--accent);
+            background: rgba(124, 58, 237, 0.1);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 6px;
+            margin-left: auto;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-card-hover);
+            color: var(--text);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <!-- ヘッダー -->
+        <header class="tool-header">
+            <a href="../index.html" class="back-btn">←</a>
+            <h1 class="tool-title">🤖 AIチャット</h1>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="clearChat()" title="履歴クリア">🗑️</button>
+                <button class="icon-btn" onclick="showApiSetup()" title="API設定">⚙️</button>
+            </div>
+        </header>
+
+        <!-- API Key設定画面 -->
+        <div class="api-setup" id="apiSetup" style="display:none;">
+            <div class="info-card">
+                <p class="info-card-title">🔑 Gemini API Key 設定</p>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">
+                    <a href="https://aistudio.google.com/apikey" target="_blank"
+                        style="color:var(--accent-bright);">Google AI Studio</a> でAPIキーを取得
+                </p>
+                <input type="password" id="apiKeyInput" placeholder="AIza..." autocomplete="off">
+                <button class="btn btn-primary" onclick="saveApiKey()" style="width:100%;margin-top:4px;">
+                    保存してチャット開始
+                </button>
+            </div>
+        </div>
+
+        <!-- チャットメイン -->
+        <div class="chat-container" id="chatContainer" style="display:none;">
+            <!-- モデル選択 -->
+            <div class="model-select" id="modelSelect">
+                <span class="model-option active" data-model="gemini-2.0-flash">⚡ Flash</span>
+                <span class="model-option" data-model="gemini-2.0-flash-thinking-exp">🧠 Thinking</span>
+                <span class="model-option" data-model="gemini-1.5-pro">💎 Pro</span>
+            </div>
+
+            <!-- メッセージエリア -->
+            <div class="messages" id="messages">
+                <div class="message system">AIチャットへようこそ！何でも聞いてください。</div>
+            </div>
+
+            <!-- タイピングインジケーター -->
+            <div class="typing-indicator" id="typing">
+                考え中<span>.</span><span>.</span><span>.</span>
+            </div>
+
+            <!-- 入力エリア -->
+            <div class="input-area">
+                <textarea id="userInput" placeholder="メッセージを入力..." rows="1" onkeydown="handleKey(event)"></textarea>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== 設定 =====
+        const STORAGE_KEY = 'abscl_gemini_api_key';
+        const HISTORY_KEY = 'abscl_chat_history';
+        let currentModel = 'gemini-2.0-flash';
+        let chatHistory = [];
+        let isProcessing = false;
+
+        // DOM
+        const apiSetup = document.getElementById('apiSetup');
+        const chatContainer = document.getElementById('chatContainer');
+        const messagesEl = document.getElementById('messages');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingEl = document.getElementById('typing');
+
+        // ===== 初期化 =====
+        function init() {
+            const key = localStorage.getItem(STORAGE_KEY);
+            if (key) {
+                showChat();
+                loadHistory();
+            } else {
+                apiSetup.style.display = 'block';
+            }
+
+            // モデル選択イベント
+            document.querySelectorAll('.model-option').forEach(el => {
+                el.addEventListener('click', () => {
+                    document.querySelectorAll('.model-option').forEach(e => e.classList.remove('active'));
+                    el.classList.add('active');
+                    currentModel = el.dataset.model;
+                });
+            });
+
+            // テキストエリア自動リサイズ
+            userInput.addEventListener('input', () => {
+                userInput.style.height = 'auto';
+                userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+            });
+        }
+
+        // ===== API Key管理 =====
+        function saveApiKey() {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            if (!key || !key.startsWith('AIza')) {
+                alert('有効なAPI Keyを入力してください（AIza...で始まる）');
+                return;
+            }
+            localStorage.setItem(STORAGE_KEY, key);
+            showChat();
+        }
+
+        function showApiSetup() {
+            apiSetup.style.display = 'block';
+            chatContainer.style.display = 'none';
+            document.getElementById('apiKeyInput').value = localStorage.getItem(STORAGE_KEY) || '';
+        }
+
+        function showChat() {
+            apiSetup.style.display = 'none';
+            chatContainer.style.display = 'flex';
+            userInput.focus();
+        }
+
+        // ===== チャット履歴 =====
+        function loadHistory() {
+            try {
+                const saved = localStorage.getItem(HISTORY_KEY);
+                if (saved) {
+                    chatHistory = JSON.parse(saved);
+                    chatHistory.forEach(msg => addMessageEl(msg.role, msg.text, false));
+                }
+            } catch (e) { chatHistory = []; }
+        }
+
+        function saveHistory() {
+            // 最新20件のみ保存
+            const toSave = chatHistory.slice(-20);
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(toSave));
+        }
+
+        function clearChat() {
+            if (!confirm('チャット履歴をクリアしますか？')) return;
+            chatHistory = [];
+            localStorage.removeItem(HISTORY_KEY);
+            messagesEl.innerHTML = '<div class="message system">履歴をクリアしました。</div>';
+        }
+
+        // ===== メッセージ操作 =====
+        function addMessageEl(role, text, animate = true) {
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+
+            if (role === 'ai') {
+                // Markdownっぽいパース（シンプル版）
+                div.innerHTML = parseMarkdown(text);
+            } else {
+                div.textContent = text;
+            }
+
+            if (!animate) div.style.animation = 'none';
+            messagesEl.appendChild(div);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function parseMarkdown(text) {
+            return text
+                .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+        }
+
+        // ===== メッセージ送信 =====
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text || isProcessing) return;
+
+            const apiKey = localStorage.getItem(STORAGE_KEY);
+            if (!apiKey) {
+                showApiSetup();
+                return;
+            }
+
+            isProcessing = true;
+            sendBtn.disabled = true;
+            userInput.value = '';
+            userInput.style.height = 'auto';
+
+            // ユーザーメッセージ表示
+            addMessageEl('user', text);
+            chatHistory.push({ role: 'user', text });
+
+            // タイピング表示
+            typingEl.classList.add('show');
+
+            try {
+                // Gemini API 呼び出し（REST API直接）
+                const contents = chatHistory.map(msg => ({
+                    role: msg.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: msg.text }]
+                }));
+
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents,
+                            generationConfig: {
+                                temperature: 0.8,
+                                topP: 0.95,
+                                maxOutputTokens: 4096
+                            }
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+
+                const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '（応答なし）';
+                addMessageEl('ai', aiText);
+                chatHistory.push({ role: 'ai', text: aiText });
+                saveHistory();
+
+            } catch (error) {
+                addMessageEl('ai', `❌ エラー: ${error.message}`);
+            } finally {
+                typingEl.classList.remove('show');
+                isProcessing = false;
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        // Enterで送信、Shift+Enterで改行
+        function handleKey(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // ===== 起動 =====
+        init();
+    </script>
+</body>
+
+</html>

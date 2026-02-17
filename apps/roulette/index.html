@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="description" content="AbsCL Portal - 総合ダッシュボード">
+    <title>AbsCL Portal</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+
+<body>
+    <div class="app">
+        <!-- ===== ヘッダー ===== -->
+        <header class="header">
+            <h1 class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">AbsCL Portal</span>
+            </h1>
+            <p class="tagline">総合ダッシュボード</p>
+        </header>
+
+        <!-- ===== メインコンテンツ ===== -->
+        <main class="main">
+            <!--
+                ツールカードはここに動的生成されます。
+                js/tools_config.json を編集するだけで、カードの追加・削除・並び替えが可能。
+            -->
+            <div class="tools-grid" id="toolsGrid">
+                <!-- JavaScriptで自動生成 -->
+            </div>
+
+            <p class="hint" id="hint">読み込み中...</p>
+        </main>
+
+        <!-- ===== フッター ===== -->
+        <footer class="footer">
+            <p>AbsCL © 2026 — <span id="toolCount">0</span> ツール</p>
+        </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Service Worker 登録（PWA対応）
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+
+</html>

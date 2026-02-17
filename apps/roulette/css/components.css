@@ -1,0 +1,173 @@
+/* ============================================
+   AbsCL Portal — 汎用UIコンポーネント
+   カード、ボタン、入力欄などの再利用パーツ
+   新しいツールを作る時もこのCSSを読み込めばOK
+   ============================================ */
+
+/* ===== ツールカード（ダッシュボード用） ===== */
+.tool-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px 8px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid rgba(124, 58, 237, 0.15);
+    text-decoration: none;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    animation: fadeInUp 0.4s ease both;
+}
+
+/* カードごとに遅延アニメーション（JSで --delay を設定） */
+.tool-card {
+    animation-delay: var(--delay, 0s);
+}
+
+.tool-card:hover,
+.tool-card:active {
+    background: var(--bg-card-hover);
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(124, 58, 237, 0.2);
+}
+
+.tool-card-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.tool-card-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.tool-card-desc {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.3;
+}
+
+/* ===== プライマリボタン ===== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 28px;
+    font-family: var(--font);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent), #6d28d9);
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 28px rgba(124, 58, 237, 0.6);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: var(--bg-card);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    color: var(--accent-bright);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent);
+}
+
+/* ===== インフォカード ===== */
+.info-card {
+    padding: 16px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid rgba(124, 58, 237, 0.1);
+}
+
+.info-card-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--accent-bright);
+}
+
+/* ===== 結果表示（ルーレットのような大きな表示） ===== */
+.result-display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 220px;
+    height: 220px;
+    margin: 16px auto;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 3px solid rgba(124, 58, 237, 0.3);
+    transition: all 0.3s ease;
+}
+
+.result-display.active {
+    border-color: var(--accent-glow);
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.4);
+}
+
+.result-display.highlight {
+    border-color: var(--warning);
+    box-shadow: 0 0 40px rgba(251, 191, 36, 0.5);
+}
+
+.result-text {
+    font-size: 2rem;
+    font-weight: 800;
+    text-align: center;
+    padding: 10px;
+    word-break: break-all;
+}
+
+.result-text.gold {
+    background: linear-gradient(135deg, var(--warning), #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ===== バッジ・タグ ===== */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    background: var(--bg-card);
+    border: 1px solid rgba(124, 58, 237, 0.2);
+    color: var(--text-muted);
+}
+
+.badge.gold {
+    color: var(--warning);
+    border-color: rgba(251, 191, 36, 0.3);
+}

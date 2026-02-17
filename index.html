@@ -76,6 +76,8 @@
                     <li class="sb-divider"></li>
                     <li class="sb-item" data-page="services"><span class="sb-icon">&#x1F517;</span><span
                             class="sb-label">サービスハブ</span></li>
+                    <li class="sb-item" data-page="apps"><span class="sb-icon">&#x1F3AE;</span><span
+                            class="sb-label">Apps</span></li>
                     <li class="sb-item" data-page="bot"><span class="sb-icon">&#x1F4E1;</span><span
                             class="sb-label">Bot管理</span></li>
                     <li class="sb-item" data-page="settings"><span class="sb-icon">&#x2699;&#xFE0F;</span><span
@@ -138,7 +140,8 @@
                             <button class="qa-btn" onclick="app.navigate('todos')">&#x1F4CB; TODO</button>
                             <button class="qa-btn" onclick="app.navigate('search')">&#x1F50D; 検索</button>
                             <a class="qa-btn" href="https://vscode.dev/tunnel/desktop-diblhkt" target="_blank"
-                                style="background:linear-gradient(135deg,#007acc,#2b9fdf);text-decoration:none">&#x1F4BB; VS Code</a>
+                                style="background:linear-gradient(135deg,#007acc,#2b9fdf);text-decoration:none">&#x1F4BB;
+                                VS Code</a>
                             <button class="qa-btn" onclick="app.runHealthCheck();app.navigate('health')">&#x1F3E5;
                                 ヘルス</button>
                             <button class="qa-btn" onclick="app.clearCache()">&#x1F5D1;&#xFE0F; キャッシュ</button>
@@ -380,7 +383,8 @@
                             </div>
                             <span class="svc-badge svc-active">Active</span>
                         </a>
-                        <a class="service-card" href="https://vscode.dev/tunnel/desktop-diblhkt" target="_blank" style="border:1px solid #007acc">
+                        <a class="service-card" href="https://vscode.dev/tunnel/desktop-diblhkt" target="_blank"
+                            style="border:1px solid #007acc">
                             <div class="svc-icon">&#x1F4BB;</div>
                             <div class="svc-info">
                                 <h4>VS Code Tunnel</h4>
@@ -493,6 +497,32 @@ sudo journalctl -u vault-bot -n 50 --no-pager</pre>
                         <div class="card-header">バージョン</div>
                         <p>Vault Dashboard v2.1</p>
                         <p class="text-muted">Built for AbsCL Vault System — Password Protected</p>
+                    </div>
+                </section>
+
+                <!-- Apps -->
+                <section id="page-apps" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F3AE; アプリランチャー</h2>
+                        <button class="btn btn-ghost btn-sm" id="apps-close-frame" style="display:none"
+                            onclick="app.closeAppFrame()">&#x2716; 閉じる</button>
+                    </div>
+                    <div id="apps-grid" class="apps-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div id="app-frame-wrap" class="app-frame-wrap" style="display:none">
+                        <div class="app-frame-header">
+                            <span id="app-frame-title">App</span>
+                            <div style="display:flex;gap:8px">
+                                <button class="btn btn-ghost btn-sm" onclick="app.openAppExternal()">&#x1F517;
+                                    別タブ</button>
+                                <button class="btn btn-ghost btn-sm" onclick="app.toggleAppFullscreen()">&#x26F6;
+                                    全画面</button>
+                                <button class="btn btn-ghost btn-sm" onclick="app.closeAppFrame()">&#x2716;</button>
+                            </div>
+                        </div>
+                        <iframe id="app-frame" class="app-frame"
+                            sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
                     </div>
                 </section>
             </main>

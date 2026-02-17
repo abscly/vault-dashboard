@@ -517,7 +517,8 @@ class VaultApp {
             files: () => this.loadFiles(),
             timeline: () => this.loadTimeline(),
             health: () => this.runHealthCheck(),
-            pins: () => this.renderPins()
+            pins: () => this.renderPins(),
+            apps: () => this.loadApps()
         };
         if (loaders[page]) loaders[page]();
     }
@@ -539,6 +540,87 @@ class VaultApp {
             bd.classList.remove('show');
         }
     }
+
+    // =========== APP LAUNCHER ===========
+    loadApps() {
+        const apps = [
+            { id: 'roulette', name: 'AbsCL ルーレット', icon: '🎰', desc: 'メンバー選択ルーレット', url: 'apps/roulette/index.html', color: 'linear-gradient(135deg, #f59e0b, #ef4444)' },
+            { id: 'pomodoro', name: 'ポモドーロタイマー', icon: '🍅', desc: 'PWA対応タイマー', url: 'apps/pomodoro/index.html', color: 'linear-gradient(135deg, #ef4444, #dc2626)' },
+            { id: 'diff', name: 'Git Diff Viewer', icon: '🔀', desc: 'コミット差分ビューア', url: 'diff/index.html', color: 'linear-gradient(135deg, #10b981, #06b6d4)' },
+            { id: 'status', name: 'ステータスページ', icon: '📊', desc: 'サービス稼働状況', url: 'status/index.html', color: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }
+        ];
+        const grid = document.getElementById('apps-grid');
+        grid.innerHTML = apps.map(a => `
+            <div class="app-card" onclick="app.launchApp('${a.url}', '${a.name}')" style="cursor:pointer">
+                <div class="app-card-icon" style="background:${a.color}">${a.icon}</div>
+                <div class="app-card-info">
+                    <h4>${a.name}</h4>
+                    <p>${a.desc}</p>
+                </div>
+                <span class="app-card-launch">▶</span>
+            </div>
+        `).join('');
+    }
+
+    launchApp(url, name) {
+        this._currentAppUrl = url;
+        document.getElementById('apps-grid').style.display = 'none';
+        document.getElementById('app-frame-wrap').style.display = 'flex';
+        document.getElementById('apps-close-frame').style.display = 'inline-flex';
+        document.getElementById('app-frame-title').textContent = name;
+        document.getElementById('app-frame').src = url;
+    }
+
+    closeAppFrame() {
+        document.getElementById('app-frame').src = '';
+        document.getElementById('app-frame-wrap').style.display = 'none';
+        document.getElementById('apps-grid').style.display = '';
+        document.getElementById('apps-close-frame').style.display = 'none';
+    }
+
+    openAppExternal() {
+        if (this._currentAppUrl) window.open(this._currentAppUrl, '_blank');
+    }
+
+    toggleAppFullscreen() {
+        const wrap = document.getElementById('app-frame-wrap');
+        wrap.classList.toggle('fullscreen');
+    }
+
+    // =========== MARKDOWN RENDERER ===========
+    renderMarkdown(text) {
+        if (!text) return '';
+        let html = this.esc(text);
+        // Headers
+        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+        // Bold & italic
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        // Code blocks
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="lang-$1">$2</code></pre>');
+        // Inline code
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+        // Checkboxes
+        html = html.replace(/^- \[x\] (.+)$/gm, '<div class="md-check done">✅ $1</div>');
+        html = html.replace(/^- \[ \] (.+)$/gm, '<div class="md-check">⬜ $1</div>');
+        // Lists
+        html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+        // Links
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+        // Horizontal rule
+        html = html.replace(/^---$/gm, '<hr>');
+        // Line breaks
+        html = html.replace(/\n/g, '<br>');
+        // Clean up br inside pre
+        html = html.replace(/<pre><code([^>]*)>([\s\S]*?)<\/code><\/pre>/g, (m, cls, code) => {
+            return '<pre><code' + cls + '>' + code.replace(/<br>/g, '\n') + '</code></pre>';
+        });
+        return html;
+    }
+
     toast(msg) {
         const el = document.getElementById('toast');
         el.textContent = msg;
@@ -603,7 +685,7 @@ class VaultApp {
             const today = new Date().toISOString().substring(0, 10);
             try {
                 const content = await this.api.readFile('Daily/' + today + '.md');
-                tc.innerHTML = '<pre style="white-space:pre-wrap;font-size:13px;line-height:1.6;max-height:200px;overflow-y:auto">' + this.esc(content) + '</pre>';
+                tc.innerHTML = '<div class="md-preview" style="max-height:250px;overflow-y:auto;padding:8px">' + this.renderMarkdown(content) + '</div>';
             } catch (e) {
                 tc.innerHTML = '<p class="text-muted">\u4ECA\u65E5\u306EDaily\u306F\u307E\u3060\u3042\u308A\u307E\u305B\u3093</p>';
             }
@@ -839,7 +921,7 @@ class VaultApp {
                 '<span class="file-preview-meta" style="font-size:12px;color:var(--text-4)">' + (size / 1024).toFixed(1) + ' KB</span>' +
                 '<button class="btn btn-ghost btn-sm" onclick="app.editFile(\'' + this.esc(path.replace(/'/g, "\\'")) + '\')">\u270F\uFE0F \u7DE8\u96C6</button>' +
                 '</div></div>' +
-                '<pre>' + this.esc(content) + '</pre>';
+                (path.endsWith('.md') ? '<div class="md-preview">' + this.renderMarkdown(content) + '</div>' : '<pre>' + this.esc(content) + '</pre>');
         } catch (e) { preview.innerHTML = '<div class="loading">\u274C ' + this.esc(e.message) + '</div>'; }
     }
 

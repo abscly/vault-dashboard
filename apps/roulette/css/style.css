@@ -1,0 +1,212 @@
+/* ============================================
+   AbsCL Portal — 共通ダークUIテーマ
+   全ページで共有するグローバルスタイル
+   ============================================ */
+
+/* --- CSS変数（テーマカラー） --- */
+:root {
+    --bg-primary: #0a0a1a;
+    --bg-secondary: #111128;
+    --bg-card: #1a1a3e;
+    --bg-card-hover: #222255;
+    --accent: #7c3aed;
+    --accent-glow: #a855f7;
+    --accent-bright: #c084fc;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --success: #22c55e;
+    --warning: #fbbf24;
+    --danger: #ef4444;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --font: 'Outfit', -apple-system, sans-serif;
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* --- リセット --- */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: var(--font);
+    background: var(--bg-primary);
+    color: var(--text);
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    overflow-y: auto;
+}
+
+/* --- 背景グロー演出 --- */
+body::before {
+    content: '';
+    position: fixed;
+    top: -40%;
+    left: -40%;
+    width: 180%;
+    height: 180%;
+    background: radial-gradient(circle at 50% 20%, rgba(124, 58, 237, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* --- アプリコンテナ --- */
+.app {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 16px;
+}
+
+/* --- ヘッダー --- */
+.header {
+    text-align: center;
+    padding: 12px 0 20px;
+}
+
+.logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.logo-icon {
+    font-size: 1.8rem;
+}
+
+.logo-text {
+    background: linear-gradient(135deg, var(--accent-bright), var(--warning));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.tagline {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+/* --- ツール用共通ヘッダー（サブページ用） --- */
+.tool-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0 16px;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid rgba(124, 58, 237, 0.2);
+    color: var(--text);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.back-btn:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent);
+}
+
+.tool-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+/* --- メインコンテンツ --- */
+.main {
+    flex: 1;
+}
+
+/* --- ツールグリッド（ダッシュボード） --- */
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+/* --- フッター --- */
+.footer {
+    text-align: center;
+    padding: 16px 0 8px;
+    color: var(--text-dim);
+    font-size: 0.7rem;
+}
+
+.hint {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    margin-top: 16px;
+}
+
+/* --- アニメーション --- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 40px rgba(124, 58, 237, 0.5);
+    }
+}
+
+/* --- レスポンシブ --- */
+@media (min-width: 400px) {
+    .tools-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

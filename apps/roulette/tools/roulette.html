@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a1a">
+    <title>ルーレット — AbsCL Portal</title>
+    <!-- 共通CSS（全ツール共通） -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/components.css">
+</head>
+
+<body>
+    <div class="app">
+        <!-- ===== ヘッダー（戻るボタン付き） ===== -->
+        <header class="tool-header">
+            <a href="../index.html" class="back-btn">←</a>
+            <h1 class="tool-title">🎰 ルーレット</h1>
+        </header>
+
+        <!-- ===== メインコンテンツ ===== -->
+        <main class="main" style="display:flex;flex-direction:column;align-items:center;gap:20px;">
+
+            <!-- 結果表示エリア -->
+            <div class="result-display" id="display">
+                <span class="result-text" id="resultText">?</span>
+            </div>
+
+            <p style="color:var(--text-muted);font-size:0.8rem;" id="memberInfo"></p>
+
+            <!-- スピンボタン -->
+            <button class="btn btn-primary" id="spinBtn" style="font-size:1.1rem;min-width:180px;">
+                🎲 SPIN!
+            </button>
+
+            <!-- 履歴 -->
+            <div style="width:100%;max-width:300px;margin-top:auto;">
+                <h3 style="font-size:0.85rem;color:var(--text-muted);text-align:center;margin-bottom:8px;">📜 履歴</h3>
+                <div id="historyList" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ===== AbsCLメンバー配列 =====
+        const MEMBERS = [
+            "simrhythm", "cizcky", "suitooou", "alpha", "dorayaki",
+            "swamp", "ore25iti5", "reu", "cappuccino", "kyoppi",
+            "azveil", "Slumberland", "ososhi", "goggles", "gomaru",
+            "stohuro", "takenicle", "goto", "BB", "MK"
+        ];
+
+        // DOM
+        const display = document.getElementById('display');
+        const resultText = document.getElementById('resultText');
+        const spinBtn = document.getElementById('spinBtn');
+        const historyList = document.getElementById('historyList');
+        const memberInfo = document.getElementById('memberInfo');
+
+        // State
+        let isSpinning = false;
+        const history = [];
+
+        memberInfo.textContent = `${MEMBERS.length} メンバー`;
+
+        // ===== スピンロジック =====
+        spinBtn.addEventListener('click', () => {
+            if (isSpinning) return;
+            isSpinning = true;
+            spinBtn.disabled = true;
+
+            display.className = 'result-display active';
+            resultText.className = 'result-text';
+
+            const duration = 2500;
+            const start = Date.now();
+
+            function animate() {
+                const elapsed = Date.now() - start;
+                const progress = elapsed / duration;
+                const delay = 50 + Math.pow(progress, 3) * 400;
+
+                resultText.textContent = MEMBERS[Math.floor(Math.random() * MEMBERS.length)];
+
+                if (elapsed < duration) {
+                    setTimeout(animate, delay);
+                } else {
+                    // 最終結果
+                    const winner = MEMBERS[Math.floor(Math.random() * MEMBERS.length)];
+                    resultText.textContent = winner;
+                    resultText.className = 'result-text gold';
+                    display.className = 'result-display highlight';
+
+                    // 履歴
+                    history.unshift(winner);
+                    if (history.length > 10) history.pop();
+                    historyList.innerHTML = history
+                        .map((n, i) => `<span class="badge ${i === 0 ? 'gold' : ''}">${i === 0 ? '🏆 ' : ''}${n}</span>`)
+                        .join('');
+
+                    // バイブレーション
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
+
+                    setTimeout(() => {
+                        isSpinning = false;
+                        spinBtn.disabled = false;
+                    }, 800);
+                }
+            }
+            animate();
+        });
+    </script>
+</body>
+
+</html>

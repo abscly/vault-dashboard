@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a1a">
+    <title>プロトビルダー — AbsCL Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <style>
+        .proto-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        .prompt-area {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .prompt-area textarea {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            border-radius: 12px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 0.85rem;
+            resize: none;
+            outline: none;
+            min-height: 70px;
+        }
+
+        .prompt-area textarea:focus {
+            border-color: var(--accent);
+        }
+
+        .preset-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            background: var(--bg-card);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chip:hover {
+            border-color: var(--accent);
+            color: var(--accent-bright);
+        }
+
+        /* プレビューエリア */
+        .preview-container {
+            flex: 1;
+            position: relative;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid rgba(124, 58, 237, 0.15);
+            min-height: 300px;
+        }
+
+        .preview-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 10, 26, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--bg-card);
+            border-top: 3px solid var(--accent-bright);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .code-panel {
+            display: none;
+            flex: 1;
+            overflow: auto;
+        }
+
+        .code-panel.show {
+            display: block;
+        }
+
+        .code-panel pre {
+            background: var(--bg-secondary);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            overflow-x: auto;
+            color: var(--text);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .toggle-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .tab-btn {
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: rgba(124, 58, 237, 0.15);
+            color: var(--accent-bright);
+            border-color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header class="tool-header">
+            <a href="../index.html" class="back-btn">←</a>
+            <h1 class="tool-title">🛠️ プロトビルダー</h1>
+        </header>
+
+        <main class="proto-container" id="mainContainer">
+            <!-- API設定（未設定時表示） -->
+            <div id="apiSetup" style="display:none;">
+                <div class="info-card">
+                    <p class="info-card-title">🔑 Gemini API Key</p>
+                    <p style="font-size:0.8rem;color:var(--text-muted);">
+                        <a href="https://aistudio.google.com/apikey" target="_blank"
+                            style="color:var(--accent-bright);">AI Studio</a> でキー取得
+                    </p>
+                    <input type="password" id="apiKeyInput" placeholder="AIza..."
+                        style="width:100%;padding:8px 12px;background:var(--bg-card);border:1px solid rgba(124,58,237,0.2);border-radius:8px;color:var(--text);font-family:var(--font);font-size:0.85rem;margin:8px 0;outline:none;">
+                    <button class="btn btn-primary" onclick="saveKey()" style="width:100%;">保存</button>
+                </div>
+            </div>
+
+            <!-- メインUI -->
+            <div id="mainUI" style="display:none;">
+                <!-- プロンプト入力 -->
+                <div class="prompt-area">
+                    <textarea id="prompt" placeholder="作りたいものを説明してください...&#10;例：カウントダウンタイマー、じゃんけんゲーム、電卓"></textarea>
+
+                    <div class="preset-chips">
+                        <span class="chip" onclick="setPreset('calculator')">🧮 電卓</span>
+                        <span class="chip" onclick="setPreset('timer')">⏱️ タイマー</span>
+                        <span class="chip" onclick="setPreset('janken')">✊ じゃんけん</span>
+                        <span class="chip" onclick="setPreset('quiz')">❓ クイズ</span>
+                        <span class="chip" onclick="setPreset('memo')">📝 メモ帳</span>
+                    </div>
+
+                    <div class="preview-actions">
+                        <button class="btn btn-primary" id="generateBtn" onclick="generate()" style="flex:1;">
+                            ⚡ 生成
+                        </button>
+                        <button class="btn btn-secondary" onclick="showApiSettings()">⚙️</button>
+                    </div>
+                </div>
+
+                <!-- 表示切替 -->
+                <div class="toggle-row">
+                    <button class="tab-btn active" onclick="showTab('preview')">👁️ プレビュー</button>
+                    <button class="tab-btn" onclick="showTab('code')">📝 コード</button>
+                </div>
+
+                <!-- プレビュー -->
+                <div class="preview-container" id="previewPanel">
+                    <iframe id="previewFrame"
+                        srcdoc="<body style='font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;color:#666;'><p>⚡ 生成ボタンを押してプロトを作成</p></body>"></iframe>
+                    <div class="loading-overlay" id="loading">
+                        <div class="spinner"></div>
+                        <p style="color:var(--text-muted);font-size:0.85rem;">生成中...</p>
+                    </div>
+                </div>
+
+                <!-- コード表示 -->
+                <div class="code-panel" id="codePanel">
+                    <pre><code id="codeDisplay">// ここに生成されたコードが表示されます</code></pre>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'abscl_gemini_api_key';
+        let generatedCode = '';
+
+        // ===== 初期化 =====
+        function init() {
+            const key = localStorage.getItem(STORAGE_KEY);
+            if (key) {
+                document.getElementById('mainUI').style.display = 'flex';
+                document.getElementById('mainUI').style.flexDirection = 'column';
+                document.getElementById('mainUI').style.gap = '12px';
+                document.getElementById('mainUI').style.flex = '1';
+            } else {
+                document.getElementById('apiSetup').style.display = 'block';
+            }
+        }
+
+        function saveKey() {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            if (!key.startsWith('AIza')) { alert('有効なAPI Keyを入力してください'); return; }
+            localStorage.setItem(STORAGE_KEY, key);
+            document.getElementById('apiSetup').style.display = 'none';
+            document.getElementById('mainUI').style.display = 'flex';
+            document.getElementById('mainUI').style.flexDirection = 'column';
+            document.getElementById('mainUI').style.gap = '12px';
+            document.getElementById('mainUI').style.flex = '1';
+        }
+
+        function showApiSettings() {
+            document.getElementById('apiSetup').style.display = 'block';
+            document.getElementById('apiKeyInput').value = localStorage.getItem(STORAGE_KEY) || '';
+        }
+
+        // ===== プリセット =====
+        const PRESETS = {
+            calculator: '電卓アプリを作って。四則演算ができるモダンなUI。ボタンで数字と演算子を入力。',
+            timer: 'カウントダウンタイマー。分と秒を設定でき、開始/停止/リセットボタン付き。残り時間を大きく表示。',
+            janken: 'じゃんけんゲーム。ボタンでグー・チョキ・パーを選択。CPUの手と勝敗を表示。勝敗記録も。',
+            quiz: '4択クイズアプリ。3問用意して順番に出題。正解/不正解のフィードバックと最終スコア表示。',
+            memo: 'シンプルなメモ帳。テキスト入力、保存ボタン、保存済みメモ一覧表示。LocalStorage使用。'
+        };
+
+        function setPreset(key) {
+            document.getElementById('prompt').value = PRESETS[key];
+        }
+
+        // ===== タブ切替 =====
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('previewPanel').style.display = tab === 'preview' ? 'block' : 'none';
+            document.getElementById('codePanel').className = tab === 'code' ? 'code-panel show' : 'code-panel';
+        }
+
+        // ===== 生成 =====
+        async function generate() {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) return;
+
+            const apiKey = localStorage.getItem(STORAGE_KEY);
+            if (!apiKey) { document.getElementById('apiSetup').style.display = 'block'; return; }
+
+            const loading = document.getElementById('loading');
+            const btn = document.getElementById('generateBtn');
+            loading.classList.add('show');
+            btn.disabled = true;
+
+            const systemPrompt = `あなたはフロントエンドの達人です。ユーザーの要求に基づいて、1つの完全なHTMLファイルを生成してください。
+
+ルール:
+- HTML, CSS, JavaScriptを1つのHTMLファイルにまとめる
+- モダンでおしゃれなダークテーマUI
+- モバイルファースト（タッチ対応）
+- 外部ライブラリ不要（vanilla JS/CSS）
+- 背景色は #0a0a1a 系のダーク
+- フォントはsans-serif
+- ボタンはグラデーション付き丸角
+- HTMLのみ出力（説明不要）
+- \`\`\`htmlなどのマークダウン記法は使わず、HTMLのみ出力`;
+
+            try {
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [
+                                { role: 'user', parts: [{ text: systemPrompt + '\n\n作成してほしいもの: ' + prompt }] }
+                            ],
+                            generationConfig: { temperature: 0.7, maxOutputTokens: 8192 }
+                        })
+                    }
+                );
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+
+                let html = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+                // ```html ... ``` を除去
+                html = html.replace(/^```html?\n?/i, '').replace(/\n?```$/i, '').trim();
+
+                generatedCode = html;
+
+                // プレビュー更新
+                document.getElementById('previewFrame').srcdoc = html;
+                document.getElementById('codeDisplay').textContent = html;
+
+            } catch (error) {
+                alert('エラー: ' + error.message);
+            } finally {
+                loading.classList.remove('show');
+                btn.disabled = false;
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
