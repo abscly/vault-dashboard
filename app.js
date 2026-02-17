@@ -12,8 +12,9 @@ const DEFAULT_USERS = [
     { id: 'user4', name: 'User 4', color: '#ef4444', role: 'member' },
     { id: 'user5', name: 'User 5', color: '#8b5cf6', role: 'member' }
 ];
-const ROLE_PASSWORDS = { admin: 'ore25iti5', member: 'vault2025' };
-const DEFAULT_GEMINI_KEY = 'AIzaSyAhF0gnhlh4I28b1ZMiUsoLtlNMhp_jtTo';
+// Passwords stored in localStorage, not hardcoded (security)
+const ROLE_PASSWORDS = JSON.parse(localStorage.getItem('vault_passwords') || '{"admin":"","member":""}');
+const DEFAULT_GEMINI_KEY = '';  // Set via Settings page, stored in localStorage
 
 // ===================================
 // GitHub Vault API
@@ -321,6 +322,11 @@ class VaultApp {
             if (selectedIdx < 0) return;
             const user = this.availableUsers[selectedIdx];
             const pw = pwInput.value;
+            // If passwords not yet configured, show setup
+            if (!ROLE_PASSWORDS.admin && !ROLE_PASSWORDS.member) {
+                this.showPasswordSetup(overlay);
+                return;
+            }
             if (pw === ROLE_PASSWORDS[user.role] || pw === ROLE_PASSWORDS.admin) {
                 this.currentUser = user;
                 sessionStorage.setItem('vault_auth', 'ok');
@@ -337,6 +343,44 @@ class VaultApp {
         };
         pwBtn.addEventListener('click', tryPw);
         pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryPw(); });
+
+        // Auto-show setup if passwords not configured
+        if (!ROLE_PASSWORDS.admin && !ROLE_PASSWORDS.member) {
+            this.showPasswordSetup(overlay);
+        }
+    }
+
+    showPasswordSetup(overlay) {
+        overlay.innerHTML =
+            '<div class="login-bg"></div>' +
+            '<div class="login-container" style="max-width:420px">' +
+            '<div class="login-logo-wrap"><div class="login-logo-glow"></div><div class="login-logo">🔐</div></div>' +
+            '<h1 class="login-title">初回セットアップ</h1>' +
+            '<p class="login-subtitle">パスワードを設定してください</p>' +
+            '<div class="input-group" style="margin-top:16px">' +
+            '<label style="font-size:13px;color:var(--text-3);margin-bottom:4px;display:block">👑 Admin パスワード</label>' +
+            '<input type="password" id="setup-admin-pw" placeholder="Admin パスワード" autocomplete="off">' +
+            '</div>' +
+            '<div class="input-group" style="margin-top:12px">' +
+            '<label style="font-size:13px;color:var(--text-3);margin-bottom:4px;display:block">👤 Member パスワード</label>' +
+            '<input type="password" id="setup-member-pw" placeholder="Member パスワード" autocomplete="off">' +
+            '</div>' +
+            '<button id="setup-btn" class="btn btn-primary btn-lg" style="margin-top:16px">保存してログイン</button>' +
+            '<p id="setup-error" style="color:var(--red);font-size:13px;margin-top:10px;display:none">❌ パスワードを入力してください</p>' +
+            '</div>';
+        overlay.style.cssText = 'display:flex;align-items:center;justify-content:center;position:fixed;inset:0;z-index:9999;background:var(--bg-0)';
+
+        document.getElementById('setup-btn').addEventListener('click', () => {
+            const adminPw = document.getElementById('setup-admin-pw').value;
+            const memberPw = document.getElementById('setup-member-pw').value;
+            if (!adminPw) {
+                document.getElementById('setup-error').style.display = 'block';
+                return;
+            }
+            const passwords = { admin: adminPw, member: memberPw || adminPw };
+            localStorage.setItem('vault_passwords', JSON.stringify(passwords));
+            location.reload();
+        });
     }
 
     init() {
@@ -344,7 +388,7 @@ class VaultApp {
         try {
             const token = localStorage.getItem('vault_token');
             const repo = localStorage.getItem('vault_repo');
-            const gemKey = localStorage.getItem('vault_gemini') || DEFAULT_GEMINI_KEY;
+            const gemKey = localStorage.getItem('vault_gemini') || '';
             this.webhookUrl = localStorage.getItem('vault_webhook') || '';
             if (token && repo) this.connect(token, repo, gemKey);
 
@@ -397,7 +441,7 @@ class VaultApp {
     doLogin() {
         const token = document.getElementById('token-input').value.trim();
         const repo = document.getElementById('repo-input').value.trim();
-        const gemKey = document.getElementById('gemini-input').value.trim() || DEFAULT_GEMINI_KEY;
+        const gemKey = document.getElementById('gemini-input').value.trim() || localStorage.getItem('vault_gemini') || '';
         if (!token) return this.toast('\u274C \u30C8\u30FC\u30AF\u30F3\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044');
         localStorage.setItem('vault_token', token);
         localStorage.setItem('vault_repo', repo);
