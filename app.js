@@ -786,15 +786,7 @@ class VaultApp {
                 generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
             };
 
-            const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + geminiKey, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-
-            if (!res.ok) throw new Error('API ' + res.status);
-            const data = await res.json();
-            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '応答を取得できませんでした';
+            const reply = await this._callGemini(geminiKey, body);
 
             this._aiHistory.push({ role: 'model', parts: [{ text: reply }] });
             // Keep history manageable
@@ -807,6 +799,33 @@ class VaultApp {
             document.getElementById(thinkingId)?.remove();
             this._addAiMsg('bot', '❌ エラー: ' + e.message);
         }
+    }
+
+    async _callGemini(key, body, retries = 3) {
+        const models = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        for (let m = 0; m < models.length; m++) {
+            const model = models[m];
+            for (let i = 0; i < retries; i++) {
+                const res = await fetch(
+                    'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + key,
+                    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+                );
+                if (res.ok) {
+                    const data = await res.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text || '応答を取得できませんでした';
+                }
+                if (res.status === 429) {
+                    const wait = Math.pow(2, i + 1) * 1000;
+                    console.warn(`Gemini 429 (${model}), retry ${i + 1}/${retries} in ${wait}ms`);
+                    await new Promise(r => setTimeout(r, wait));
+                    continue;
+                }
+                // Other error with this model, try next model
+                if (m < models.length - 1) break;
+                throw new Error('API ' + res.status);
+            }
+        }
+        throw new Error('All models returned 429. しばらく待ってから再試行してください。');
     }
 
     _addAiMsg(role, text) {
