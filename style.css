@@ -2670,6 +2670,82 @@ textarea {
     color: var(--green);
 }
 
+/* ===== Memo Page ===== */
+.memo-input-wrap {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.memo-input-wrap input {
+    flex: 1;
+    padding: 12px 16px;
+    background: var(--bg-2);
+    border: 1px solid var(--border-1);
+    border-radius: var(--radius);
+    color: var(--text-1);
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.memo-input-wrap input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.memo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.memo-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--bg-2);
+    border: 1px solid var(--border-1);
+    border-radius: var(--radius);
+    transition: all 0.25s var(--ease);
+    animation: cardSlideIn 0.3s var(--ease) both;
+}
+
+.memo-card:hover {
+    border-color: var(--accent);
+    transform: translateX(4px);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
+}
+
+.memo-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.memo-text {
+    font-size: 14px;
+    color: var(--text-1);
+    font-weight: 500;
+}
+
+.memo-time {
+    font-size: 11px;
+    color: var(--text-4);
+}
+
+.memo-done {
+    flex-shrink: 0;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.memo-card:hover .memo-done {
+    opacity: 1;
+}
+
 /* =============================================
    MOBILE RESPONSIVE — Pixel 8a (1080x2400)
    ============================================= */

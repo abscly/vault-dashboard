@@ -69,6 +69,8 @@
                             class="sb-label">AI</span></li>
                     <li class="sb-item" data-page="pins"><span class="sb-icon">&#x1F4CC;</span><span
                             class="sb-label">ピン留め</span></li>
+                    <li class="sb-item" data-page="memos"><span class="sb-icon">&#x1F4A1;</span><span
+                            class="sb-label">メモ</span></li>
                     <li class="sb-item" data-page="timeline"><span class="sb-icon">&#x1F4C5;</span><span
                             class="sb-label">タイムライン</span></li>
                     <li class="sb-item" data-page="health"><span class="sb-icon">&#x1F3E5;</span><span
@@ -523,6 +525,21 @@ sudo journalctl -u vault-bot -n 50 --no-pager</pre>
                         </div>
                         <iframe id="app-frame" class="app-frame"
                             sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+                    </div>
+                </section>
+
+                <!-- Memos -->
+                <section id="page-memos" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F4A1; メモ帳</h2>
+                        <span class="text-muted" id="memo-count"></span>
+                    </div>
+                    <div class="memo-input-wrap">
+                        <input type="text" id="memo-input" placeholder="アイデアや気付きをメモ..." autocomplete="off">
+                        <button class="btn btn-primary" onclick="app.addMemo()">&#x2795; 追加</button>
+                    </div>
+                    <div id="memo-list" class="memo-list">
+                        <div class="loading">読み込み中...</div>
                     </div>
                 </section>
             </main>

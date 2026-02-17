@@ -450,6 +450,7 @@ class VaultApp {
             document.getElementById('quick-note-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') this.addQuickNote(); });
             document.getElementById('todo-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') this.addTodo(); });
             document.getElementById('pin-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') this.addPin(); });
+            document.getElementById('memo-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') this.addMemo(); });
 
             console.log('[VaultApp] init() complete');
         } catch (e) { console.error('[VaultApp] init error:', e); }
@@ -518,7 +519,8 @@ class VaultApp {
             timeline: () => this.loadTimeline(),
             health: () => this.runHealthCheck(),
             pins: () => this.renderPins(),
-            apps: () => this.loadApps()
+            apps: () => this.loadApps(),
+            memos: () => this.loadMemos()
         };
         if (loaders[page]) loaders[page]();
     }
@@ -619,6 +621,87 @@ class VaultApp {
             return '<pre><code' + cls + '>' + code.replace(/<br>/g, '\n') + '</code></pre>';
         });
         return html;
+    }
+
+    // =========== MEMOS ===========
+    async loadMemos() {
+        const list = document.getElementById('memo-list');
+        const countEl = document.getElementById('memo-count');
+        if (!this.api) { list.innerHTML = '<div class="loading">🚧 GitHub接続が必要です</div>'; return; }
+        list.innerHTML = this.loading();
+        try {
+            const content = await this.api.readFile('Memos.md');
+            const lines = content.split('\n').filter(l => l.trim().startsWith('- '));
+            this._memosRaw = content;
+            this._memoLines = lines;
+            countEl.textContent = lines.length + ' 件';
+            if (!lines.length) {
+                list.innerHTML = '<div class="loading">📝 メモはまだありません</div>';
+                return;
+            }
+            list.innerHTML = lines.map((line, i) => {
+                const match = line.match(/^- \*\*(.+?)\*\* — (.+)$/);
+                const ts = match ? match[1] : '';
+                const text = match ? match[2] : line.replace(/^- /, '');
+                return '<div class="memo-card" style="animation-delay:' + (i * 0.05) + 's">' +
+                    '<div class="memo-card-content">' +
+                    '<span class="memo-text">' + this.esc(text) + '</span>' +
+                    (ts ? '<span class="memo-time">' + ts + '</span>' : '') +
+                    '</div>' +
+                    '<button class="btn btn-ghost btn-sm memo-done" onclick="app.deleteMemo(' + i + ')" title="完了">✅</button>' +
+                    '</div>';
+            }).reverse().join('');
+        } catch (e) {
+            if (e.message && e.message.includes('404')) {
+                list.innerHTML = '<div class="loading">📝 メモはまだありません。最初のメモを追加しよう！</div>';
+                countEl.textContent = '0 件';
+            } else {
+                list.innerHTML = '<div class="loading">❌ ' + this.esc(e.message) + '</div>';
+            }
+        }
+    }
+
+    async addMemo() {
+        const input = document.getElementById('memo-input');
+        const text = input.value.trim();
+        if (!text) return;
+        if (!this.api) return this.toast('❌ GitHub接続が必要です');
+        input.value = '';
+        const now = new Date();
+        const ts = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        const newLine = '- **' + ts + '** — ' + text;
+
+        try {
+            let content;
+            try {
+                content = await this.api.readFile('Memos.md');
+            } catch (e) {
+                content = '---\ntags:\n  - type/ボス\n---\n\n# 💡 メモ帳\n';
+            }
+            content += '\n' + newLine;
+            await this.api.writeFile('Memos.md', content, 'Bot: memo - ' + text.substring(0, 30));
+            this.toast('💡 メモ追加！');
+            this.loadMemos();
+            // Webhook通知
+            this.notifyWebhook('💡 メモ追加', text);
+        } catch (e) {
+            this.toast('❌ ' + e.message);
+        }
+    }
+
+    async deleteMemo(idx) {
+        if (!this.api || !this._memoLines) return;
+        const line = this._memoLines[idx];
+        if (!line) return;
+        try {
+            let content = this._memosRaw;
+            content = content.replace(line, '').replace(/\n\n\n+/g, '\n\n');
+            await this.api.writeFile('Memos.md', content.trim() + '\n', 'Bot: memo done');
+            this.toast('✅ メモ完了！');
+            this.loadMemos();
+        } catch (e) {
+            this.toast('❌ ' + e.message);
+        }
     }
 
     toast(msg) {
