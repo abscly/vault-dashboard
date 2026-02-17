@@ -214,24 +214,39 @@ class GeminiAPI {
     constructor(key) { this.key = key; }
 
     async ask(prompt, context) {
-        if (!this.key) throw new Error('Gemini API Key\u304C\u672A\u8A2D\u5B9A\u3067\u3059');
+        if (!this.key) throw new Error('Gemini API Keyが未設定です');
         const systemPrompt = context
             ? 'You are a helpful assistant for an Obsidian Vault. Answer in Japanese. Context:\n' + context
             : 'You are a helpful AI assistant. Answer in Japanese.';
-        const res = await fetch(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + this.key,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    system_instruction: { parts: [{ text: systemPrompt }] },
-                    contents: [{ parts: [{ text: prompt }] }]
-                })
+
+        const maxRetries = 3;
+        let delay = 2000;
+
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            const res = await fetch(
+                'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + this.key,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        system_instruction: { parts: [{ text: systemPrompt }] },
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                }
+            );
+
+            if (res.status === 429 && attempt < maxRetries) {
+                console.log(`[Gemini] 429 Rate limit, retry ${attempt + 1}/${maxRetries} in ${delay}ms...`);
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+                continue;
             }
-        );
-        if (!res.ok) throw new Error('Gemini API Error: ' + res.status);
-        const data = await res.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || '\u5FDC\u7B54\u306A\u3057';
+
+            if (!res.ok) throw new Error('Gemini API Error: ' + res.status);
+            const data = await res.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || '応答なし';
+        }
+        throw new Error('Gemini API: レート制限中。しばらく待ってから再試行してください');
     }
 }
 
