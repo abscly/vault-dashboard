@@ -426,7 +426,9 @@ class VaultApp {
 
             // Mobile menu
             document.getElementById('menu-toggle')?.addEventListener('click', () => {
-                document.getElementById('sidebar').classList.toggle('open');
+                const sb = document.getElementById('sidebar');
+                sb.classList.toggle('open');
+                this.toggleMobileBackdrop(sb.classList.contains('open'));
             });
 
             // Quick note enter
@@ -491,6 +493,7 @@ class VaultApp {
         if (el) el.classList.add('active');
         this.page = page;
         document.getElementById('sidebar').classList.remove('open');
+        this.toggleMobileBackdrop(false);
 
         const loaders = {
             dashboard: () => this.loadDashboard(),
@@ -504,6 +507,23 @@ class VaultApp {
         if (loaders[page]) loaders[page]();
     }
 
+    toggleMobileBackdrop(show) {
+        let bd = document.querySelector('.sidebar-backdrop');
+        if (show) {
+            if (!bd) {
+                bd = document.createElement('div');
+                bd.className = 'sidebar-backdrop';
+                bd.addEventListener('click', () => {
+                    document.getElementById('sidebar').classList.remove('open');
+                    this.toggleMobileBackdrop(false);
+                });
+                document.body.appendChild(bd);
+            }
+            requestAnimationFrame(() => bd.classList.add('show'));
+        } else if (bd) {
+            bd.classList.remove('show');
+        }
+    }
     toast(msg) {
         const el = document.getElementById('toast');
         el.textContent = msg;

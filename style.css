@@ -2479,3 +2479,370 @@ textarea {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent);
 }
+
+/* =============================================
+   MOBILE RESPONSIVE — Pixel 8a (1080x2400)
+   ============================================= */
+@media (max-width: 768px) {
+    /* --- Body & Screen --- */
+    body {
+        overflow: auto;
+        height: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .screen {
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+
+    .screen.active {
+        flex-direction: column;
+    }
+
+    /* --- Sidebar → Drawer --- */
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 280px;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 9990;
+        transition: left 0.3s var(--ease);
+        box-shadow: none;
+        padding-bottom: 80px;
+    }
+
+    #sidebar.open {
+        left: 0;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Backdrop for sidebar */
+    .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9989;
+        display: none;
+    }
+
+    .sidebar-backdrop.show {
+        display: block;
+    }
+
+    /* --- Mobile Header --- */
+    #mobile-header {
+        display: flex !important;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        padding: 10px 16px;
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        background: rgba(10, 14, 26, 0.85);
+    }
+
+    #mobile-header .btn {
+        font-size: 22px;
+        padding: 6px 10px;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* --- Content Area --- */
+    #content {
+        padding: 16px 12px;
+        padding-bottom: 80px;
+        overflow: visible;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .page-header h2 {
+        font-size: 20px;
+    }
+
+    /* --- Stats Grid → 2 columns --- */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 14px 12px;
+    }
+
+    .stat-num {
+        font-size: 22px;
+    }
+
+    .stat-label {
+        font-size: 11px;
+    }
+
+    /* --- Grid 2 → stack --- */
+    .grid-2 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* --- Services Grid → 1 column --- */
+    .services-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+    }
+
+    .service-card {
+        padding: 14px !important;
+    }
+
+    .svc-icon {
+        font-size: 28px !important;
+    }
+
+    /* --- Project Grid → 1 column --- */
+    .project-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* --- Quick Actions → scrollable --- */
+    .quick-actions {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+    }
+
+    .quick-actions::-webkit-scrollbar {
+        display: none;
+    }
+
+    .qa-btn {
+        flex-shrink: 0;
+        padding: 10px 14px;
+        font-size: 13px;
+        min-height: 44px;
+    }
+
+    /* --- Contribution Graph --- */
+    .contrib-graph {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .contrib-cell {
+        width: 10px;
+        height: 10px;
+    }
+
+    /* --- AI Chat --- */
+    .ai-chat {
+        height: calc(100vh - 280px);
+        height: calc(100dvh - 280px);
+    }
+
+    .ai-msg.user {
+        margin-left: 16px;
+    }
+
+    .ai-msg.bot {
+        margin-right: 16px;
+    }
+
+    .ai-input-row {
+        gap: 8px;
+    }
+
+    .ai-input-row input {
+        font-size: 16px; /* prevent iOS zoom */
+    }
+
+    /* --- TODO --- */
+    .todo-add {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .todo-add input {
+        font-size: 16px;
+    }
+
+    .todo-item {
+        padding: 12px 10px;
+    }
+
+    .todo-item .todo-project {
+        display: none;
+    }
+
+    /* --- Search --- */
+    .search-box {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .search-box input {
+        font-size: 16px;
+    }
+
+    /* --- File Browser --- */
+    .file-browser {
+        grid-template-columns: 1fr !important;
+    }
+
+    .file-tree {
+        max-height: 250px;
+    }
+
+    .file-preview {
+        max-height: 350px;
+    }
+
+    /* --- Command Palette --- */
+    .cmd-overlay {
+        padding-top: 10vh;
+    }
+
+    .cmd-palette {
+        max-width: 95vw;
+    }
+
+    /* --- Notification Panel --- */
+    .notif-panel {
+        width: 100vw;
+        right: -100vw;
+    }
+
+    /* --- Login --- */
+    .login-container {
+        max-width: 95vw;
+        padding: 24px 20px;
+    }
+
+    .login-title {
+        font-size: 22px;
+    }
+
+    /* --- System Diagram --- */
+    .system-diagram {
+        overflow-x: auto;
+    }
+
+    .sys-arrows {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .sys-node {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+
+    /* --- Bot Management --- */
+    .code-block pre {
+        font-size: 11px;
+        overflow-x: auto;
+    }
+
+    .bot-cmd {
+        font-size: 13px;
+    }
+
+    .bot-cmd code {
+        font-size: 12px;
+    }
+
+    /* --- Settings --- */
+    .setting-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .setting-row label {
+        min-width: auto;
+    }
+
+    .setting-row input {
+        font-size: 16px;
+    }
+
+    /* --- Cards general --- */
+    .card {
+        border-radius: 12px;
+    }
+
+    .card-header {
+        font-size: 14px;
+    }
+
+    /* --- Pins --- */
+    .pin-add {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* --- Filter Tabs (TODO) --- */
+    .filter-tabs {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .tab {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    /* --- Quick Note --- */
+    .quick-note {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .quick-note input {
+        font-size: 16px;
+    }
+
+    /* --- Misc touch targets --- */
+    .btn {
+        min-height: 40px;
+    }
+
+    .btn-sm {
+        min-height: 36px;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    textarea {
+        font-size: 16px; /* prevents iOS zoom on focus */
+        padding: 12px 14px;
+    }
+}
+
+/* Smaller phones (< 380px) */
+@media (max-width: 380px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .qa-btn {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .page-header h2 {
+        font-size: 18px;
+    }
+}
