@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vault Diff Viewer</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface2: #1a1a2e;
+            --border: #2a2a3e;
+            --text: #e4e4e7;
+            --text-dim: #71717a;
+            --green: #22c55e;
+            --green-bg: rgba(34, 197, 94, 0.08);
+            --red: #ef4444;
+            --red-bg: rgba(239, 68, 68, 0.08);
+            --blue: #6366f1;
+            --yellow: #eab308;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .controls select,
+        .controls input,
+        .controls button {
+            padding: 0.5rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .controls select:focus,
+        .controls input:focus {
+            border-color: var(--blue);
+        }
+
+        .controls button {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .controls button:hover {
+            border-color: var(--blue);
+            background: var(--surface2);
+        }
+
+        .btn-primary {
+            background: var(--blue) !important;
+            border-color: var(--blue) !important;
+            color: white;
+        }
+
+        .commit-list {
+            margin-bottom: 1.5rem;
+        }
+
+        .commit-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .commit-item:hover {
+            border-color: var(--blue);
+            background: var(--surface2);
+        }
+
+        .commit-item.active {
+            border-color: var(--blue);
+            background: var(--surface2);
+        }
+
+        .commit-hash {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--blue);
+            background: rgba(99, 102, 241, 0.1);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .commit-msg {
+            font-size: 0.85rem;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .commit-date {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            flex-shrink: 0;
+        }
+
+        .commit-files {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            flex-shrink: 0;
+            background: var(--surface2);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .diff-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .diff-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px 8px 0 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .diff-stat-add {
+            color: var(--green);
+            font-size: 0.75rem;
+        }
+
+        .diff-stat-del {
+            color: var(--red);
+            font-size: 0.75rem;
+        }
+
+        .diff-body {
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            overflow-x: auto;
+        }
+
+        .diff-line {
+            display: flex;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.6;
+        }
+
+        .diff-line-num {
+            width: 50px;
+            text-align: right;
+            padding: 0 8px;
+            color: var(--text-dim);
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .diff-line-content {
+            flex: 1;
+            padding: 0 8px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .diff-line.add {
+            background: var(--green-bg);
+        }
+
+        .diff-line.add .diff-line-content {
+            color: var(--green);
+        }
+
+        .diff-line.del {
+            background: var(--red-bg);
+        }
+
+        .diff-line.del .diff-line-content {
+            color: var(--red);
+        }
+
+        .diff-line.hunk {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .diff-line.hunk .diff-line-content {
+            color: var(--blue);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-dim);
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem 0;
+            border-top: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.75rem;
+        }
+
+        footer a {
+            color: var(--blue);
+            text-decoration: none;
+        }
+
+        .section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-pill {
+            padding: 0.35rem 0.75rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 0.75rem;
+        }
+
+        .stat-pill span {
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>📝 Vault Diff Viewer</h1>
+                <p>Obsidian Vaultの変更履歴とファイル差分</p>
+            </div>
+            <a href="../" style="color:var(--blue);text-decoration:none;font-size:0.8rem;">← Dashboard</a>
+        </header>
+
+        <div class="controls">
+            <input type="password" id="tokenInput" placeholder="GitHub Token" style="width:200px">
+            <input type="text" id="repoInput" placeholder="owner/repo" value="abscly/obsidian-vault"
+                style="width:180px">
+            <select id="limitSelect">
+                <option value="10">最新10件</option>
+                <option value="20" selected>最新20件</option>
+                <option value="50">最新50件</option>
+            </select>
+            <button class="btn-primary" onclick="loadCommits()">🔍 読み込み</button>
+        </div>
+
+        <div id="statsBar" class="stats-bar" style="display:none;"></div>
+
+        <div class="section-title">コミット一覧</div>
+        <div id="commitList" class="commit-list">
+            <div class="empty-state">GitHubトークンを入力して「読み込み」をクリック</div>
+        </div>
+
+        <div id="diffArea"></div>
+
+        <footer>
+            Vault Diff Viewer &nbsp;•&nbsp; <a href="../">Dashboard</a> &nbsp;•&nbsp; <a href="../status/">Status</a>
+        </footer>
+    </div>
+
+    <script>
+        // Restore saved token
+        const savedToken = localStorage.getItem('vault_github_token');
+        if (savedToken) document.getElementById('tokenInput').value = savedToken;
+
+        let commits = [];
+
+        async function ghFetch(path, token) {
+            const repo = document.getElementById('repoInput').value;
+            const resp = await fetch(`https://api.github.com/repos/${repo}${path}`, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            if (!resp.ok) throw new Error(`GitHub API: ${resp.status}`);
+            return resp.json();
+        }
+
+        async function loadCommits() {
+            const token = document.getElementById('tokenInput').value.trim();
+            if (!token) { alert('GitHubトークンを入力してください'); return; }
+
+            localStorage.setItem('vault_github_token', token);
+
+            const limit = parseInt(document.getElementById('limitSelect').value);
+            const commitList = document.getElementById('commitList');
+            commitList.innerHTML = '<div class="loading">⏳ コミット読み込み中...</div>';
+
+            try {
+                commits = await ghFetch(`/commits?per_page=${limit}`, token);
+
+                // Stats
+                const statsBar = document.getElementById('statsBar');
+                statsBar.style.display = 'flex';
+
+                const dates = commits.map(c => c.commit.author.date.slice(0, 10));
+                const uniqueDates = new Set(dates);
+
+                statsBar.innerHTML = `
+                <div class="stat-pill">📦 <span>${commits.length}</span> コミット</div>
+                <div class="stat-pill">📅 <span>${uniqueDates.size}</span> 日間</div>
+                <div class="stat-pill">👤 <span>${new Set(commits.map(c => c.commit.author.name)).size}</span> コミッター</div>
+            `;
+
+                // Render commits
+                let html = '';
+                commits.forEach((c, i) => {
+                    const date = new Date(c.commit.author.date);
+                    const dateStr = date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    html += `
+                    <div class="commit-item" onclick="loadDiff(${i})" id="commit-${i}">
+                        <span class="commit-hash">${c.sha.slice(0, 7)}</span>
+                        <span class="commit-msg">${escHtml(c.commit.message.split('\n')[0])}</span>
+                        <span class="commit-date">${dateStr}</span>
+                    </div>
+                `;
+                });
+                commitList.innerHTML = html || '<div class="empty-state">コミットがありません</div>';
+
+            } catch (err) {
+                commitList.innerHTML = `<div class="empty-state">⚠️ エラー: ${err.message}</div>`;
+            }
+        }
+
+        async function loadDiff(index) {
+            const token = localStorage.getItem('vault_github_token');
+            const commit = commits[index];
+
+            // Highlight active commit
+            document.querySelectorAll('.commit-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`commit-${index}`).classList.add('active');
+
+            const diffArea = document.getElementById('diffArea');
+            diffArea.innerHTML = '<div class="loading">⏳ 差分を読み込み中...</div>';
+
+            try {
+                const detail = await ghFetch(`/commits/${commit.sha}`, token);
+                const files = detail.files || [];
+
+                let totalAdd = 0, totalDel = 0;
+                files.forEach(f => { totalAdd += f.additions; totalDel += f.deletions; });
+
+                let html = `
+                <div class="section-title" style="margin-top:1.5rem;">
+                    差分: ${commit.sha.slice(0, 7)} — ${escHtml(commit.commit.message.split('\n')[0])}
+                    &nbsp; <span style="color:var(--green)">+${totalAdd}</span> <span style="color:var(--red)">-${totalDel}</span>
+                    &nbsp; (${files.length}ファイル)
+                </div>
+            `;
+
+                files.forEach(file => {
+                    const statusIcon = file.status === 'added' ? '🟢' : file.status === 'removed' ? '🔴' : '📝';
+                    html += `
+                    <div class="diff-container">
+                        <div class="diff-header">
+                            <span>${statusIcon}</span>
+                            <span style="flex:1;">${file.filename}</span>
+                            <span class="diff-stat-add">+${file.additions}</span>
+                            <span class="diff-stat-del">-${file.deletions}</span>
+                        </div>
+                        <div class="diff-body">
+                `;
+
+                    if (file.patch) {
+                        const lines = file.patch.split('\n');
+                        let lineNum = 0;
+                        lines.forEach(line => {
+                            let cls = '';
+                            let prefix = ' ';
+                            if (line.startsWith('@@')) {
+                                cls = 'hunk';
+                                const match = line.match(/@@ -\d+(?:,\d+)? \+(\d+)/);
+                                if (match) lineNum = parseInt(match[1]) - 1;
+                            } else if (line.startsWith('+')) {
+                                cls = 'add';
+                                lineNum++;
+                            } else if (line.startsWith('-')) {
+                                cls = 'del';
+                            } else {
+                                lineNum++;
+                            }
+
+                            html += `
+                            <div class="diff-line ${cls}">
+                                <span class="diff-line-num">${cls === 'hunk' ? '···' : cls === 'del' ? '' : lineNum || ''}</span>
+                                <span class="diff-line-content">${escHtml(line)}</span>
+                            </div>
+                        `;
+                        });
+                    } else {
+                        html += '<div class="diff-line"><span class="diff-line-content" style="color:var(--text-dim);padding:1rem;">(バイナリファイルまたは大きすぎるファイル)</span></div>';
+                    }
+
+                    html += '</div></div>';
+                });
+
+                diffArea.innerHTML = html;
+
+            } catch (err) {
+                diffArea.innerHTML = `<div class="empty-state">⚠️ 差分取得エラー: ${err.message}</div>`;
+            }
+        }
+
+        function escHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // Auto-load if token exists
+        if (savedToken) {
+            setTimeout(loadCommits, 500);
+        }
+    </script>
+</body>
+
+</html>

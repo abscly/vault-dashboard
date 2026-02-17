@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vault Dashboard</title>
+    <meta name="description" content="Obsidian Vault Dashboard - リアルタイム管理">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0e1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F5C4;</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- ========== LOGIN ========== -->
+        <div id="login-screen" class="screen active">
+            <div class="login-bg"></div>
+            <div class="login-container">
+                <div class="login-logo-wrap">
+                    <div class="login-logo-glow"></div>
+                    <div class="login-logo">&#x1F5C4;&#xFE0F;</div>
+                </div>
+                <h1 class="login-title">Vault Dashboard</h1>
+                <p class="login-subtitle">Obsidian Vault Remote Control</p>
+                <div class="input-group">
+                    <label>GitHub Token</label>
+                    <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label>Repository</label>
+                    <input type="text" id="repo-input" value="abscly/obsidian-vault">
+                </div>
+                <div class="input-group">
+                    <label>Gemini API Key (AI機能用・任意)</label>
+                    <input type="password" id="gemini-input" placeholder="AIxxxxx" autocomplete="off">
+                </div>
+                <button id="login-btn" class="btn btn-primary btn-lg">接続する</button>
+                <p class="login-note">トークンはブラウザのlocalStorageに保存されます</p>
+            </div>
+        </div>
+
+        <!-- ========== MAIN ========== -->
+        <div id="main-screen" class="screen">
+            <!-- Sidebar -->
+            <nav id="sidebar">
+                <div class="sb-header">
+                    <span class="sb-logo">&#x1F5C4;&#xFE0F;</span>
+                    <span class="sb-brand">Vault</span>
+                </div>
+                <ul class="sb-nav">
+                    <li class="sb-item active" data-page="dashboard"><span class="sb-icon">&#x1F4CA;</span><span
+                            class="sb-label">ダッシュボード</span></li>
+                    <li class="sb-item" data-page="todos"><span class="sb-icon">&#x1F4CB;</span><span
+                            class="sb-label">TODO</span></li>
+                    <li class="sb-item" data-page="projects"><span class="sb-icon">&#x1F4C1;</span><span
+                            class="sb-label">プロジェクト</span></li>
+                    <li class="sb-item" data-page="files"><span class="sb-icon">&#x1F4C4;</span><span
+                            class="sb-label">ファイル</span></li>
+                    <li class="sb-item" data-page="search"><span class="sb-icon">&#x1F50D;</span><span
+                            class="sb-label">検索</span></li>
+                    <li class="sb-item" data-page="ai"><span class="sb-icon">&#x1F916;</span><span
+                            class="sb-label">AI</span></li>
+                    <li class="sb-item" data-page="pins"><span class="sb-icon">&#x1F4CC;</span><span
+                            class="sb-label">ピン留め</span></li>
+                    <li class="sb-item" data-page="timeline"><span class="sb-icon">&#x1F4C5;</span><span
+                            class="sb-label">タイムライン</span></li>
+                    <li class="sb-item" data-page="health"><span class="sb-icon">&#x1F3E5;</span><span
+                            class="sb-label">ヘルスチェック</span></li>
+                    <li class="sb-divider"></li>
+                    <li class="sb-item" data-page="services"><span class="sb-icon">&#x1F517;</span><span
+                            class="sb-label">サービスハブ</span></li>
+                    <li class="sb-item" data-page="bot"><span class="sb-icon">&#x1F4E1;</span><span
+                            class="sb-label">Bot管理</span></li>
+                    <li class="sb-item" data-page="settings"><span class="sb-icon">&#x2699;&#xFE0F;</span><span
+                            class="sb-label">設定</span></li>
+                </ul>
+                <div class="sb-footer">
+                    <div id="sidebar-user"
+                        style="display:flex;align-items:center;gap:8px;padding:8px 0;margin-bottom:8px;border-bottom:1px solid var(--border-1)">
+                        <div id="sidebar-user-avatar"
+                            style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">
+                        </div>
+                        <div>
+                            <div id="sidebar-user-name" style="font-size:13px;font-weight:600;color:var(--text-1)">
+                            </div>
+                            <div id="sidebar-user-role" style="font-size:10px;color:var(--text-4)"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between">
+                        <div class="sb-status" id="connection-status">&#x1F7E2; 接続中</div>
+                        <div class="notif-bell" onclick="app.toggleNotifPanel()" title="通知センター">&#x1F514;</div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" onclick="app.openCmd()"
+                        style="text-align:left;justify-content:space-between;width:100%">
+                        <span>&#x1F50D; 検索...</span>
+                        <kbd
+                            style="font-size:10px;padding:1px 5px;background:var(--bg-3);border:1px solid var(--border-2);border-radius:3px">Ctrl+K</kbd>
+                    </button>
+                    <button id="logout-btn" class="btn btn-ghost btn-sm">ログアウト</button>
+                </div>
+            </nav>
+
+            <!-- Mobile Header -->
+            <div id="mobile-header">
+                <button id="menu-toggle" class="btn btn-ghost">&#x2630;</button>
+                <span class="sb-brand">Vault</span>
+            </div>
+
+            <!-- Content Area -->
+            <main id="content">
+                <!-- ===== DASHBOARD ===== -->
+                <section id="page-dashboard" class="page active">
+                    <div class="page-header">
+                        <h2>&#x1F4CA; ダッシュボード</h2>
+                        <button class="btn btn-ghost btn-sm" onclick="app.loadDashboard()">&#x1F504; 更新</button>
+                    </div>
+                    <div class="stats-grid" id="stats-grid"></div>
+                    <!-- Quick Actions -->
+                    <div class="card" style="margin-bottom:16px">
+                        <div class="card-header">&#x26A1; クイックアクション</div>
+                        <div class="quick-actions">
+                            <a class="qa-btn"
+                                href="https://notebooklm.google.com/notebook/b854034e-0253-4307-b693-ab8d4e56229e"
+                                target="_blank">
+                                &#x1F4D3; NotebookLM
+                            </a>
+                            <a class="qa-btn" href="https://github.com/abscly/obsidian-vault" target="_blank">
+                                &#x1F4E6; GitHub
+                            </a>
+                            <button class="qa-btn" onclick="app.navigate('ai')">&#x1F916; AI</button>
+                            <button class="qa-btn" onclick="app.navigate('todos')">&#x1F4CB; TODO</button>
+                            <button class="qa-btn" onclick="app.navigate('search')">&#x1F50D; 検索</button>
+                            <button class="qa-btn" onclick="app.runHealthCheck();app.navigate('health')">&#x1F3E5;
+                                ヘルス</button>
+                            <button class="qa-btn" onclick="app.clearCache()">&#x1F5D1;&#xFE0F; キャッシュ</button>
+                            <button class="qa-btn" onclick="app.syncNow()"
+                                style="background:linear-gradient(135deg,var(--green),var(--cyan))">&#x1F504; Sync
+                                Now</button>
+                        </div>
+                    </div>
+                    <!-- Contribution Graph -->
+                    <div class="card">
+                        <div class="card-header">&#x1F4C8; 貢献グラフ</div>
+                        <div id="contrib-graph" class="contrib-graph"></div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="card" id="health-card">
+                            <div class="card-header">&#x1F3E5; Health Score</div>
+                            <div id="health-mini"></div>
+                        </div>
+                        <div class="card" id="recent-card">
+                            <div class="card-header">&#x1F4DC; 最近の変更</div>
+                            <div id="recent-mini"></div>
+                        </div>
+                    </div>
+                    <div class="card" id="today-card">
+                        <div class="card-header">&#x1F4DD; 今日のDaily</div>
+                        <div id="today-content"></div>
+                        <div class="quick-note">
+                            <input type="text" id="quick-note-input" placeholder="クイックメモ...">
+                            <button class="btn btn-primary btn-sm" onclick="app.addQuickNote()">追加</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== TODO ===== -->
+                <section id="page-todos" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F4CB; TODO</h2>
+                        <div class="filter-tabs" id="todo-filter">
+                            <button class="tab active" data-filter="pending">未完了</button>
+                            <button class="tab" data-filter="done">完了</button>
+                            <button class="tab" data-filter="all">全て</button>
+                        </div>
+                    </div>
+                    <div class="todo-add">
+                        <input type="text" id="todo-input" placeholder="新しいTODO...">
+                        <input type="text" id="todo-project-input" placeholder="プロジェクト名 (任意)">
+                        <button class="btn btn-primary" onclick="app.addTodo()">追加</button>
+                    </div>
+                    <div id="todo-list"></div>
+                </section>
+
+                <!-- ===== PROJECTS ===== -->
+                <section id="page-projects" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F4C1; プロジェクト</h2>
+                    </div>
+                    <div id="project-grid" class="project-grid"></div>
+                    <div id="project-detail" class="card" style="display:none"></div>
+                </section>
+
+                <!-- ===== FILES ===== -->
+                <section id="page-files" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F4C4; ファイル</h2>
+                        <button class="btn btn-primary btn-sm" onclick="app.showCreateFile()">&#x2795; 新規作成</button>
+                    </div>
+                    <div id="create-file-form" class="card" style="display:none">
+                        <input type="text" id="new-file-path" placeholder="パス (例: Knowledge/test.md)">
+                        <textarea id="new-file-content" rows="6" placeholder="ファイル内容..."></textarea>
+                        <div class="btn-row">
+                            <button class="btn btn-primary btn-sm" onclick="app.createFile()">作成</button>
+                            <button class="btn btn-ghost btn-sm"
+                                onclick="document.getElementById('create-file-form').style.display='none'">キャンセル</button>
+                        </div>
+                    </div>
+                    <div class="file-browser">
+                        <div id="file-tree" class="file-tree"></div>
+                        <div id="file-preview" class="file-preview">
+                            <p class="placeholder-text">&larr; ファイルを選択してプレビュー</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== SEARCH ===== -->
+                <section id="page-search" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F50D; 検索</h2>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="Vault全体を検索...">
+                        <button class="btn btn-primary" onclick="app.doSearch()">検索</button>
+                    </div>
+                    <div id="search-results"></div>
+                </section>
+
+                <!-- ===== AI ===== -->
+                <section id="page-ai" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F916; AI アシスタント</h2>
+                    </div>
+                    <div class="ai-tabs">
+                        <button class="tab active" data-mode="ask" onclick="app.setAiMode('ask')">&#x1F4DA; Vault
+                            RAG</button>
+                        <button class="tab" data-mode="chat" onclick="app.setAiMode('chat')">&#x1F4AC; フリーチャット</button>
+                        <button class="tab" data-mode="code" onclick="app.setAiMode('code')">&#x1F6E0;&#xFE0F;
+                            コード生成</button>
+                    </div>
+                    <div id="ai-chat" class="ai-chat"></div>
+                    <div class="ai-input-row">
+                        <input type="text" id="ai-input" placeholder="質問を入力...">
+                        <button class="btn btn-primary" onclick="app.sendAi()">送信</button>
+                    </div>
+                </section>
+
+                <!-- ===== PINS ===== -->
+                <section id="page-pins" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F4CC; ピン留め</h2>
+                    </div>
+                    <div class="pin-add">
+                        <input type="text" id="pin-input" placeholder="ピン留めメモ...">
+                        <button class="btn btn-primary" onclick="app.addPin()">ピン留め</button>
+                    </div>
+                    <div id="pin-list"></div>
+                </section>
+
+                <!-- ===== TIMELINE ===== -->
+                <section id="page-timeline" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F4C5; タイムライン</h2>
+                    </div>
+                    <div id="timeline-content" class="timeline"></div>
+                </section>
+
+                <!-- ===== HEALTH ===== -->
+                <section id="page-health" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F3E5; ヘルスチェック</h2>
+                        <button class="btn btn-ghost btn-sm" onclick="app.runHealthCheck()">&#x1F504; 再チェック</button>
+                    </div>
+                    <div id="health-detail"></div>
+                </section>
+
+                <!-- ===== SERVICES HUB ===== -->
+                <section id="page-services" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F517; サービスハブ</h2>
+                    </div>
+                    <div class="services-grid" id="services-grid">
+                        <a class="service-card" href="https://github.com/abscly/obsidian-vault" target="_blank">
+                            <div class="svc-icon">&#x1F4E6;</div>
+                            <div class="svc-info">
+                                <h4>GitHub Vault</h4>
+                                <p>Obsidian Vault リポジトリ</p>
+                            </div>
+                            <span class="svc-badge svc-active">Active</span>
+                        </a>
+                        <a class="service-card" href="https://github.com/abscly/vault-bot-render" target="_blank">
+                            <div class="svc-icon">&#x1F916;</div>
+                            <div class="svc-info">
+                                <h4>Vault Bot Repo</h4>
+                                <p>GCE Bot ソースコード</p>
+                            </div>
+                            <span class="svc-badge svc-active">Active</span>
+                        </a>
+                        <a class="service-card"
+                            href="https://notebooklm.google.com/notebook/b854034e-0253-4307-b693-ab8d4e56229e"
+                            target="_blank">
+                            <div class="svc-icon">&#x1F4D3;</div>
+                            <div class="svc-info">
+                                <h4>NotebookLM</h4>
+                                <p>AI分析・クロスリファレンス</p>
+                            </div>
+                            <span class="svc-badge svc-active">Active</span>
+                        </a>
+                        <a class="service-card"
+                            href="https://console.cloud.google.com/compute/instances?project=stella-462710"
+                            target="_blank">
+                            <div class="svc-icon">&#x2601;&#xFE0F;</div>
+                            <div class="svc-info">
+                                <h4>Google Cloud (GCE)</h4>
+                                <p>e2-micro VM / vault-bot</p>
+                            </div>
+                            <span class="svc-badge svc-active">$0/月</span>
+                        </a>
+                        <a class="service-card" href="https://discord.com/channels/@me" target="_blank">
+                            <div class="svc-icon">&#x1F4AC;</div>
+                            <div class="svc-info">
+                                <h4>Discord</h4>
+                                <p>Bot操作 / Webhook通知</p>
+                            </div>
+                            <span class="svc-badge svc-active">Active</span>
+                        </a>
+                        <a class="service-card" href="https://aistudio.google.com/apikey" target="_blank">
+                            <div class="svc-icon">&#x2728;</div>
+                            <div class="svc-info">
+                                <h4>Gemini API</h4>
+                                <p>AI機能 / コード生成</p>
+                            </div>
+                            <span class="svc-badge svc-active">Active</span>
+                        </a>
+                        <a class="service-card" href="https://github.com/abscly/obsidian-vault/actions" target="_blank">
+                            <div class="svc-icon">&#x26A1;</div>
+                            <div class="svc-info">
+                                <h4>GitHub Actions</h4>
+                                <p>日次ヘルス / 週次AIサマリー</p>
+                            </div>
+                            <span class="svc-badge svc-active">Active</span>
+                        </a>
+                        <a class="service-card" href="https://github.com/abscly/vault-dashboard" target="_blank">
+                            <div class="svc-icon">&#x1F310;</div>
+                            <div class="svc-info">
+                                <h4>Vault Dashboard</h4>
+                                <p>このWebアプリ</p>
+                            </div>
+                            <span class="svc-badge svc-info-badge">PWA</span>
+                        </a>
+                        <a class="service-card" href="https://dashboard.render.com/" target="_blank">
+                            <div class="svc-icon">&#x1F680;</div>
+                            <div class="svc-info">
+                                <h4>Render</h4>
+                                <p>Bot デプロイ先</p>
+                            </div>
+                            <span class="svc-badge svc-active">Active</span>
+                        </a>
+                        <a class="service-card" href="https://uptimerobot.com/dashboard" target="_blank">
+                            <div class="svc-icon">&#x1F4F6;</div>
+                            <div class="svc-info">
+                                <h4>UptimeRobot</h4>
+                                <p>サービス稼働監視</p>
+                            </div>
+                            <span class="svc-badge svc-active">Active</span>
+                        </a>
+                        <a class="service-card" href="https://drive.google.com/" target="_blank">
+                            <div class="svc-icon">&#x1F4BE;</div>
+                            <div class="svc-info">
+                                <h4>Google Drive</h4>
+                                <p>バックアップ同期先</p>
+                            </div>
+                            <span class="svc-badge svc-active">Active</span>
+                        </a>
+                    </div>
+                    <div class="card" style="margin-top:16px">
+                        <div class="card-header">&#x1F4CA; システム構成図</div>
+                        <div class="system-diagram">
+                            <div class="sys-node sys-center">&#x1F5C4;&#xFE0F; Obsidian Vault<br><span
+                                    class="text-muted">GitHub</span></div>
+                            <div class="sys-arrows">
+                                <div class="sys-node">&#x1F916; GCE Bot<br><span class="text-muted">24/7 Discord</span>
+                                </div>
+                                <div class="sys-node">&#x1F310; Dashboard<br><span class="text-muted">PWA</span></div>
+                                <div class="sys-node">&#x1F4D3; NotebookLM<br><span class="text-muted">AI分析</span></div>
+                                <div class="sys-node">&#x26A1; Actions<br><span class="text-muted">自動化</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== BOT MANAGEMENT ===== -->
+                <section id="page-bot" class="page">
+                    <div class="page-header">
+                        <h2>&#x1F4E1; Bot管理</h2>
+                    </div>
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header">&#x1F916; Bot ステータス</div>
+                            <div id="bot-status">
+                                <div class="bot-stat-row"><span>プラットフォーム</span><span class="text-accent">GCE
+                                        e2-micro</span></div>
+                                <div class="bot-stat-row"><span>リージョン</span><span>us-east1-c</span></div>
+                                <div class="bot-stat-row"><span>プロジェクト</span><span>stella-462710</span></div>
+                                <div class="bot-stat-row"><span>サービス</span><span>vault-bot.service</span></div>
+                                <div class="bot-stat-row"><span>コスト</span><span class="text-green">$0/月</span></div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">&#x1F4DD; Bot コマンド一覧</div>
+                            <div id="bot-commands" class="bot-cmd-list">
+                                <div class="bot-cmd"><code>!status</code><span>Vault統計</span></div>
+                                <div class="bot-cmd"><code>!today</code><span>今日のDaily</span></div>
+                                <div class="bot-cmd"><code>!todo</code><span>TODO一覧</span></div>
+                                <div class="bot-cmd"><code>!add_todo &lt;task&gt;</code><span>TODO追加</span></div>
+                                <div class="bot-cmd"><code>!done &lt;keyword&gt;</code><span>TODO完了</span></div>
+                                <div class="bot-cmd"><code>!note &lt;memo&gt;</code><span>メモ追加</span></div>
+                                <div class="bot-cmd"><code>!ai &lt;question&gt;</code><span>Gemini AI</span></div>
+                                <div class="bot-cmd"><code>!record</code><span>作業記録</span></div>
+                                <div class="bot-cmd"><code>!weekly</code><span>週次レビュー</span></div>
+                                <div class="bot-cmd"><code>!monthly</code><span>月次レビュー</span></div>
+                                <div class="bot-cmd"><code>!sync</code><span>NLM同期</span></div>
+                                <div class="bot-cmd"><code>!backup</code><span>Git同期</span></div>
+                                <div class="bot-cmd"
+                                    style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px">
+                                    <code>/vault ai &lt;q&gt;</code><span>スラッシュコマンド</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">&#x1F527; GCE SSH コマンド</div>
+                        <div class="code-block">
+                            <pre># Bot再起動
+cd ~/vault-bot-render &amp;&amp; git pull &amp;&amp; sudo systemctl restart vault-bot
+
+# ステータス確認
+sudo systemctl status vault-bot
+
+# ログ確認
+sudo journalctl -u vault-bot -n 50 --no-pager</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== SETTINGS ===== -->
+                <section id="page-settings" class="page">
+                    <div class="page-header">
+                        <h2>&#x2699;&#xFE0F; 設定</h2>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">接続情報</div>
+                        <div class="setting-row">
+                            <label>Repository</label>
+                            <input type="text" id="setting-repo" readonly>
+                        </div>
+                        <div class="setting-row">
+                            <label>Gemini API Key</label>
+                            <input type="password" id="setting-gemini" placeholder="未設定">
+                            <button class="btn btn-ghost btn-sm" onclick="app.updateGeminiKey()">更新</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">&#x1F4E1; Obsidian 連携 (Discord Webhook)</div>
+                        <p class="text-muted" style="margin-bottom:10px">メモ追加・TODO操作・ファイル作成時にDiscordに自動通知します</p>
+                        <div class="setting-row">
+                            <label>Webhook URL</label>
+                            <input type="text" id="setting-webhook" placeholder="https://discord.com/api/webhooks/...">
+                            <button class="btn btn-ghost btn-sm" onclick="app.updateWebhook()">更新</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">キャッシュ</div>
+                        <button class="btn btn-ghost" onclick="app.clearCache()">&#x1F5D1;&#xFE0F; キャッシュクリア</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">バージョン</div>
+                        <p>Vault Dashboard v2.1</p>
+                        <p class="text-muted">Built for AbsCL Vault System — Password Protected</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <!-- Command Palette -->
+    <div id="cmd-overlay" class="cmd-overlay hidden" onclick="if(event.target===this)app.closeCmd()">
+        <div class="cmd-palette">
+            <div class="cmd-input-wrap">
+                <span class="cmd-icon">&#x1F50D;</span>
+                <input type="text" id="cmd-input" placeholder="ページ、ファイル、TODO を検索..." autocomplete="off">
+            </div>
+            <div class="cmd-results" id="cmd-results"></div>
+            <div class="cmd-footer">
+                <span><kbd>↑↓</kbd> 移動</span>
+                <span><kbd>Enter</kbd> 実行</span>
+                <span><kbd>Esc</kbd> 閉じる</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Panel -->
+    <div id="notif-panel" class="notif-panel">
+        <div class="notif-header">
+            <span>&#x1F514; 通知</span>
+            <button class="btn btn-ghost btn-sm" onclick="app.toggleNotifPanel()">&#x2716;</button>
+        </div>
+        <div class="notif-list" id="notif-list"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AbsCL Status</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface2: #1a1a2e;
+            --border: #2a2a3e;
+            --text: #e4e4e7;
+            --text-dim: #71717a;
+            --green: #22c55e;
+            --green-bg: rgba(34, 197, 94, 0.1);
+            --yellow: #eab308;
+            --yellow-bg: rgba(234, 179, 8, 0.1);
+            --red: #ef4444;
+            --red-bg: rgba(239, 68, 68, 0.1);
+            --blue: #6366f1;
+            --blue-bg: rgba(99, 102, 241, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-dim);
+            font-size: 0.875rem;
+        }
+
+        .overall-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+
+        .overall-status.operational {
+            background: var(--green-bg);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            color: var(--green);
+        }
+
+        .overall-status.degraded {
+            background: var(--yellow-bg);
+            border: 1px solid rgba(234, 179, 8, 0.2);
+            color: var(--yellow);
+        }
+
+        .overall-status.down {
+            background: var(--red-bg);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--red);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.green {
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        .status-dot.yellow {
+            background: var(--yellow);
+            box-shadow: 0 0 8px var(--yellow);
+        }
+
+        .status-dot.red {
+            background: var(--red);
+            box-shadow: 0 0 8px var(--red);
+        }
+
+        .status-dot.gray {
+            background: #555;
+            box-shadow: none;
+            animation: none;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .services {
+            margin-bottom: 2rem;
+        }
+
+        .service-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .service-card:hover {
+            border-color: var(--blue);
+            background: var(--surface2);
+        }
+
+        .service-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .service-icon {
+            font-size: 1.25rem;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: var(--surface2);
+        }
+
+        .service-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .service-desc {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .service-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .uptime-bars {
+            display: flex;
+            gap: 2px;
+            margin-top: 0.5rem;
+        }
+
+        .uptime-bar {
+            width: 4px;
+            height: 24px;
+            border-radius: 2px;
+            background: var(--green);
+            opacity: 0.8;
+            transition: all 0.2s;
+        }
+
+        .uptime-bar.down {
+            background: var(--red);
+        }
+
+        .uptime-bar.partial {
+            background: var(--yellow);
+        }
+
+        .uptime-bar:hover {
+            opacity: 1;
+            transform: scaleY(1.2);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            padding: 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--green), #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 0.25rem;
+        }
+
+        .incidents {
+            margin-bottom: 2rem;
+        }
+
+        .incident-card {
+            padding: 1rem 1.25rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+        }
+
+        .incident-title {
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .incident-time {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .no-incidents {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-dim);
+            font-size: 0.875rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            border-top: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.75rem;
+        }
+
+        footer a {
+            color: var(--blue);
+            text-decoration: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-dim);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .refresh-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            border-color: var(--blue);
+            background: var(--blue-bg);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 1.5rem 1rem;
+            }
+
+            header h1 {
+                font-size: 1.4rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 AbsCL System Status</h1>
+            <p>サービス稼働状況 — <span id="lastUpdate">読み込み中...</span></p>
+        </header>
+
+        <div id="overallStatus" class="overall-status operational">
+            <span class="spinner"></span> ステータスを取得中...
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-value" id="uptimePct">--</div>
+                <div class="stat-label">全体稼働率</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="servicesUp">--</div>
+                <div class="stat-label">稼働サービス</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgResponse">--</div>
+                <div class="stat-label">平均応答</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalMonitors">--</div>
+                <div class="stat-label">監視中</div>
+            </div>
+        </div>
+
+        <div class="services">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <div class="section-title" style="margin-bottom: 0;">サービス一覧</div>
+                <button class="refresh-btn" onclick="loadStatus()">🔄 更新</button>
+            </div>
+            <div id="serviceList">
+                <div class="loading"><span class="spinner"></span> 読み込み中...</div>
+            </div>
+        </div>
+
+        <div class="services">
+            <div class="section-title">ローカルサービス（手動チェック）</div>
+            <div id="localServices"></div>
+        </div>
+
+        <div class="incidents">
+            <div class="section-title">最近のインシデント</div>
+            <div id="incidentList">
+                <div class="no-incidents">✅ 過去30日間のインシデントはありません</div>
+            </div>
+        </div>
+
+        <footer>
+            Powered by <a href="https://uptimerobot.com" target="_blank">UptimeRobot</a>
+            &nbsp;•&nbsp; AbsCL Infrastructure &nbsp;•&nbsp;
+            <a href="../">Vault Dashboard</a>
+        </footer>
+    </div>
+
+    <script>
+        const UPTIME_API = 'u3311202-f4d0cc0a501d17e552b2bac7';
+
+        // Local services that we can check or display statically
+        const LOCAL_SERVICES = [
+            { name: 'Obsidian', icon: '📝', desc: 'ローカルVault', status: 'manual', note: 'ローカル稼働' },
+            { name: 'Git Sync', icon: '🔄', desc: '1日4回自動同期', status: 'auto', note: '06/12/18/23時' },
+            { name: 'Task Scheduler', icon: '⏰', desc: '9タスク登録済み', status: 'auto', note: '自動実行中' },
+            { name: 'NotebookLM', icon: '🧠', desc: '6時間ごと同期', status: 'auto', note: '自動アップロード' },
+            { name: 'Discord Webhook', icon: '🔔', desc: '通知送信', status: 'auto', note: '自動通知' },
+        ];
+
+        function statusColor(s) {
+            // UptimeRobot: 0=paused, 1=not checked, 2=up, 8=seems down, 9=down
+            if (s == 2) return 'green';
+            if (s == 8) return 'yellow';
+            if (s == 9) return 'red';
+            return 'gray';
+        }
+
+        function statusLabel(s) {
+            if (s == 2) return '稼働中';
+            if (s == 8) return '不安定';
+            if (s == 9) return '停止中';
+            if (s == 0) return '一時停止';
+            return '未確認';
+        }
+
+        function serviceIcon(name) {
+            const n = name.toLowerCase();
+            if (n.includes('bot') || n.includes('discord')) return '🤖';
+            if (n.includes('github') || n.includes('pages')) return '🌐';
+            if (n.includes('gce') || n.includes('vault-bot')) return '☁️';
+            if (n.includes('api')) return '⚡';
+            if (n.includes('dashboard')) return '📊';
+            return '🔧';
+        }
+
+        async function loadStatus() {
+            const serviceList = document.getElementById('serviceList');
+            serviceList.innerHTML = '<div class="loading"><span class="spinner"></span> UptimeRobot APIに接続中...</div>';
+
+            try {
+                const resp = await fetch('https://api.uptimerobot.com/v2/getMonitors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api_key: UPTIME_API,
+                        format: 'json',
+                        custom_uptime_ratios: '7-30-90',
+                        response_times: 1,
+                        response_times_limit: 30,
+                        logs: 1,
+                        logs_limit: 10,
+                    })
+                });
+
+                const data = await resp.json();
+
+                if (data.stat !== 'ok') {
+                    serviceList.innerHTML = '<div class="no-incidents">⚠️ API エラー: ' + (data.error?.message || 'Unknown') + '</div>';
+                    return;
+                }
+
+                const monitors = data.monitors || [];
+                renderMonitors(monitors);
+                renderLocalServices();
+            } catch (err) {
+                serviceList.innerHTML = '<div class="no-incidents">⚠️ 接続エラー: ' + err.message + '</div>';
+                renderLocalServices();
+            }
+        }
+
+        function renderMonitors(monitors) {
+            const serviceList = document.getElementById('serviceList');
+            const overall = document.getElementById('overallStatus');
+
+            let html = '';
+            let upCount = 0;
+            let totalResponse = 0;
+            let responseCount = 0;
+
+            monitors.forEach(m => {
+                const color = statusColor(m.status);
+                const label = statusLabel(m.status);
+                if (m.status == 2) upCount++;
+
+                // Get average response time
+                const rt = m.response_times || [];
+                const avgRt = rt.length > 0 ? Math.round(rt.reduce((a, b) => a + b.value, 0) / rt.length) : null;
+                if (avgRt) { totalResponse += avgRt; responseCount++; }
+
+                // Uptime ratios
+                const ratios = (m.custom_uptime_ratio || '100-100-100').split('-');
+
+                // Uptime bars from response times (last 30)
+                let bars = '';
+                if (rt.length > 0) {
+                    rt.slice().reverse().forEach(r => {
+                        const cls = r.value > 5000 ? 'partial' : r.value == 0 ? 'down' : '';
+                        bars += `<div class="uptime-bar ${cls}" title="${r.value}ms"></div>`;
+                    });
+                }
+
+                html += `
+                <div class="service-card">
+                    <div class="service-info">
+                        <div class="service-icon">${serviceIcon(m.friendly_name)}</div>
+                        <div>
+                            <div class="service-name">${m.friendly_name}</div>
+                            <div class="service-desc">${m.url || ''} ${avgRt ? '• ' + avgRt + 'ms' : ''}</div>
+                            ${bars ? `<div class="uptime-bars">${bars}</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="service-status">
+                        <span>${label}</span>
+                        <span class="status-dot ${color}"></span>
+                    </div>
+                </div>
+            `;
+            });
+
+            serviceList.innerHTML = html || '<div class="no-incidents">モニターが登録されていません</div>';
+
+            // Update overall status
+            const allUp = upCount === monitors.length;
+            const someDown = upCount < monitors.length;
+            overall.className = 'overall-status ' + (allUp ? 'operational' : someDown ? 'degraded' : 'down');
+            overall.innerHTML = `
+            <span class="status-dot ${allUp ? 'green' : someDown ? 'yellow' : 'red'}"></span>
+            ${allUp ? '✅ 全サービス稼働中' : someDown ? '⚠️ 一部サービスに問題あり' : '🔴 サービス障害発生中'}
+        `;
+
+            // Update stats
+            document.getElementById('uptimePct').textContent = monitors.length > 0
+                ? (monitors.reduce((a, m) => a + parseFloat((m.custom_uptime_ratio || '100').split('-')[0]), 0) / monitors.length).toFixed(1) + '%'
+                : '--';
+            document.getElementById('servicesUp').textContent = upCount + '/' + monitors.length;
+            document.getElementById('avgResponse').textContent = responseCount > 0 ? Math.round(totalResponse / responseCount) + 'ms' : '--';
+            document.getElementById('totalMonitors').textContent = monitors.length;
+
+            // Update time
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('ja-JP');
+
+            // Incidents
+            renderIncidents(monitors);
+        }
+
+        function renderLocalServices() {
+            const container = document.getElementById('localServices');
+            let html = '';
+
+            LOCAL_SERVICES.forEach(s => {
+                html += `
+                <div class="service-card">
+                    <div class="service-info">
+                        <div class="service-icon">${s.icon}</div>
+                        <div>
+                            <div class="service-name">${s.name}</div>
+                            <div class="service-desc">${s.desc}</div>
+                        </div>
+                    </div>
+                    <div class="service-status">
+                        <span>${s.note}</span>
+                        <span class="status-dot green"></span>
+                    </div>
+                </div>
+            `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderIncidents(monitors) {
+            const container = document.getElementById('incidentList');
+            let incidents = [];
+
+            monitors.forEach(m => {
+                const logs = m.logs || [];
+                logs.forEach(log => {
+                    if (log.type === 1) { // down
+                        incidents.push({
+                            name: m.friendly_name,
+                            time: new Date(log.datetime * 1000),
+                            duration: log.duration,
+                            reason: log.reason?.detail || 'Unknown',
+                        });
+                    }
+                });
+            });
+
+            if (incidents.length === 0) {
+                container.innerHTML = '<div class="no-incidents">✅ 過去30日間のインシデントはありません</div>';
+                return;
+            }
+
+            incidents.sort((a, b) => b.time - a.time);
+
+            let html = '';
+            incidents.slice(0, 10).forEach(inc => {
+                const dur = inc.duration > 3600
+                    ? Math.round(inc.duration / 3600) + '時間'
+                    : Math.round(inc.duration / 60) + '分';
+                html += `
+                <div class="incident-card">
+                    <div class="incident-title">🔴 ${inc.name} — ダウンタイム ${dur}</div>
+                    <div class="incident-time">${inc.time.toLocaleString('ja-JP')} • ${inc.reason}</div>
+                </div>
+            `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Auto refresh every 5 minutes
+        loadStatus();
+        setInterval(loadStatus, 5 * 60 * 1000);
+    </script>
+</body>
+
+</html>
