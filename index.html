@@ -542,6 +542,39 @@ sudo journalctl -u vault-bot -n 50 --no-pager</pre>
                         <div class="loading">読み込み中...</div>
                     </div>
                 </section>
+
+                <!-- AI Chat -->
+                <section id="page-ai" class="page">
+                    <div class="ai-chat-container">
+                        <div class="ai-chat-header">
+                            <h2>&#x1F916; AI アシスタント</h2>
+                            <button class="btn btn-ghost btn-sm" onclick="app.clearAiChat()">🗑️ クリア</button>
+                        </div>
+                        <div class="ai-chat-messages" id="ai-messages">
+                            <div class="ai-msg ai-msg-bot">
+                                <div class="ai-msg-avatar">🤖</div>
+                                <div class="ai-msg-content">
+                                    <p>こんにちは！Vault AI アシスタントです。</p>
+                                    <p>Vaultの質問、メモ追加、ファイル検索などなんでもどうぞ！</p>
+                                    <div class="ai-quick-actions">
+                                        <button class="ai-quick-btn" onclick="app.aiQuick('今日のTODOを教えて')">📋
+                                            TODO確認</button>
+                                        <button class="ai-quick-btn" onclick="app.aiQuick('Vaultの統計情報を教えて')">📊
+                                            Vault統計</button>
+                                        <button class="ai-quick-btn" onclick="app.aiQuick('最近の作業内容を要約して')">📝
+                                            作業要約</button>
+                                        <button class="ai-quick-btn" onclick="app.aiQuick('プロジェクト一覧を教えて')">📁
+                                            プロジェクト</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ai-chat-input-wrap">
+                            <input type="text" id="ai-chat-input" placeholder="質問やコマンドを入力..." autocomplete="off">
+                            <button class="btn btn-primary ai-send-btn" onclick="app.sendAiChat()">&#x27A4;</button>
+                        </div>
+                    </div>
+                </section>
             </main>
         </div>
     </div>

@@ -451,6 +451,7 @@ class VaultApp {
             document.getElementById('todo-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') this.addTodo(); });
             document.getElementById('pin-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') this.addPin(); });
             document.getElementById('memo-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') this.addMemo(); });
+            document.getElementById('ai-chat-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') this.sendAiChat(); });
 
             console.log('[VaultApp] init() complete');
         } catch (e) { console.error('[VaultApp] init error:', e); }
@@ -520,7 +521,8 @@ class VaultApp {
             health: () => this.runHealthCheck(),
             pins: () => this.renderPins(),
             apps: () => this.loadApps(),
-            memos: () => this.loadMemos()
+            memos: () => this.loadMemos(),
+            ai: () => this.initAiChat()
         };
         if (loaders[page]) loaders[page]();
     }
@@ -702,6 +704,143 @@ class VaultApp {
         } catch (e) {
             this.toast('❌ ' + e.message);
         }
+    }
+
+    // =========== AI CHAT ===========
+    initAiChat() {
+        if (!this._aiHistory) this._aiHistory = [];
+        const input = document.getElementById('ai-chat-input');
+        if (input) {
+            input.focus();
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendAiChat();
+                }
+            });
+        }
+    }
+
+    async sendAiChat() {
+        const input = document.getElementById('ai-chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+
+        const geminiKey = localStorage.getItem('vault_gemini');
+        if (!geminiKey) { this.toast('❌ 設定で Gemini API Key を入力してください'); return; }
+
+        // Add user message
+        this._addAiMsg('user', text);
+
+        // Show thinking indicator
+        const thinkingId = 'ai-thinking-' + Date.now();
+        const msgs = document.getElementById('ai-messages');
+        msgs.insertAdjacentHTML('beforeend',
+            '<div class="ai-msg ai-msg-bot" id="' + thinkingId + '">' +
+            '<div class="ai-msg-avatar">🤖</div>' +
+            '<div class="ai-msg-content"><div class="ai-thinking"><span></span><span></span><span></span></div></div></div>');
+        msgs.scrollTop = msgs.scrollHeight;
+
+        try {
+            // Gather Vault context
+            let vaultContext = '';
+            if (this.api) {
+                try {
+                    const [stats, todayContent, commits] = await Promise.all([
+                        this.api.getStats(),
+                        this.api.readFile('Daily/' + new Date().toISOString().substring(0, 10) + '.md').catch(() => ''),
+                        this.api.getCommits(5)
+                    ]);
+                    vaultContext = '\n\n【Vault統計】ノート: ' + stats.total + ', プロジェクト: ' + stats.projects +
+                        ', Daily: ' + stats.dailies + ', Knowledge: ' + stats.knowledge +
+                        '\n【今日のDaily】\n' + (todayContent || 'まだ作成されていません').substring(0, 800) +
+                        '\n【最近のコミット】\n' + commits.slice(0, 5).map(c => c.commit.message.split('\n')[0].substring(0, 50) + ' (' + c.commit.author.date.substring(0, 10) + ')').join('\n');
+
+                    // Search related files for context
+                    const keywords = text.split(/\s+/).filter(w => w.length > 2).slice(0, 3);
+                    if (keywords.length) {
+                        const files = await this.api.getMdFiles();
+                        const relevant = files.filter(f => keywords.some(k => f.path.toLowerCase().includes(k.toLowerCase()))).slice(0, 3);
+                        for (const f of relevant) {
+                            try {
+                                const c = await this.api.readFile(f.path);
+                                vaultContext += '\n\n【' + f.path + '】\n' + c.substring(0, 500);
+                            } catch (e) { }
+                        }
+                    }
+                } catch (e) { console.warn('Vault context error:', e); }
+            }
+
+            // Build conversation history
+            if (!this._aiHistory) this._aiHistory = [];
+            this._aiHistory.push({ role: 'user', parts: [{ text: text }] });
+
+            const systemPrompt = 'あなたは「Vault AI」です。Obsidian Vaultの知識ベースを持つAIアシスタントとして、' +
+                'ユーザーと自然に会話してください。日本語でフレンドリーに回答し、Vaultの内容を参照して具体的に答えてください。' +
+                'メモ追加、TODO確認、ファイル検索などについて積極的に提案してください。' + vaultContext;
+
+            const body = {
+                contents: this._aiHistory,
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+            };
+
+            const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + geminiKey, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (!res.ok) throw new Error('API ' + res.status);
+            const data = await res.json();
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '応答を取得できませんでした';
+
+            this._aiHistory.push({ role: 'model', parts: [{ text: reply }] });
+            // Keep history manageable
+            if (this._aiHistory.length > 20) this._aiHistory = this._aiHistory.slice(-16);
+
+            // Remove thinking, add response
+            document.getElementById(thinkingId)?.remove();
+            this._addAiMsg('bot', reply);
+        } catch (e) {
+            document.getElementById(thinkingId)?.remove();
+            this._addAiMsg('bot', '❌ エラー: ' + e.message);
+        }
+    }
+
+    _addAiMsg(role, text) {
+        const msgs = document.getElementById('ai-messages');
+        const isBot = role === 'bot';
+        const avatar = isBot ? '🤖' : '👤';
+        const cls = isBot ? 'ai-msg-bot' : 'ai-msg-user';
+        const rendered = isBot ? this.renderMarkdown(text) : this.esc(text);
+        msgs.insertAdjacentHTML('beforeend',
+            '<div class="ai-msg ' + cls + '">' +
+            '<div class="ai-msg-avatar">' + avatar + '</div>' +
+            '<div class="ai-msg-content">' + rendered + '</div></div>');
+        msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    clearAiChat() {
+        this._aiHistory = [];
+        const msgs = document.getElementById('ai-messages');
+        msgs.innerHTML =
+            '<div class="ai-msg ai-msg-bot">' +
+            '<div class="ai-msg-avatar">🤖</div>' +
+            '<div class="ai-msg-content">' +
+            '<p>会話をクリアしました。新しい質問をどうぞ！</p>' +
+            '<div class="ai-quick-actions">' +
+            '<button class="ai-quick-btn" onclick="app.aiQuick(\'今日のTODOを教えて\')">📋 TODO確認</button>' +
+            '<button class="ai-quick-btn" onclick="app.aiQuick(\'Vaultの統計情報を教えて\')">📊 Vault統計</button>' +
+            '<button class="ai-quick-btn" onclick="app.aiQuick(\'最近の作業内容を要約して\')">📝 作業要約</button>' +
+            '<button class="ai-quick-btn" onclick="app.aiQuick(\'プロジェクト一覧を教えて\')">📁 プロジェクト</button>' +
+            '</div></div></div>';
+    }
+
+    aiQuick(text) {
+        document.getElementById('ai-chat-input').value = text;
+        this.sendAiChat();
     }
 
     toast(msg) {
