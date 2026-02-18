@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STELLA Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #12122a;
+            --bg-card: #1a1a3e;
+            --bg-card-hover: #222252;
+            --accent-primary: #7c5cff;
+            --accent-secondary: #5c8cff;
+            --accent-pink: #ff5caa;
+            --accent-green: #5cffaa;
+            --accent-yellow: #ffd95c;
+            --accent-red: #ff5c5c;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888aa;
+            --text-muted: #555577;
+            --border: rgba(124, 92, 255, 0.15);
+            --glow: rgba(124, 92, 255, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 50%, rgba(124, 92, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 50%, rgba(255, 92, 170, 0.03) 0%, transparent 50%);
+            animation: bgFloat 20s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes bgFloat {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(-2%, 2%);
+            }
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 10, 26, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-healthy {
+            background: rgba(92, 255, 170, 0.15);
+            color: var(--accent-green);
+        }
+
+        .status-degraded {
+            background: rgba(255, 217, 92, 0.15);
+            color: var(--accent-yellow);
+        }
+
+        .status-critical {
+            background: rgba(255, 92, 92, 0.15);
+            color: var(--accent-red);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .refresh-btn {
+            background: rgba(124, 92, 255, 0.15);
+            border: 1px solid var(--border);
+            color: var(--accent-primary);
+            padding: 6px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(124, 92, 255, 0.3);
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            gap: 4px;
+            padding: 8px 32px;
+            background: rgba(18, 18, 42, 0.6);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(124, 92, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .nav-btn.active {
+            background: rgba(124, 92, 255, 0.2);
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main {
+            padding: 24px 32px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        @media (max-width: 768px) {
+
+            .grid-2,
+            .grid-3,
+            .grid-4 {
+                grid-template-columns: 1fr;
+            }
+
+            .main {
+                padding: 16px;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: rgba(124, 92, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .card-icon {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        /* Stat Card Mini */
+        .stat-mini {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-mini:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Emotion Bars */
+        .emotion-bar-container {
+            margin: 8px 0;
+        }
+
+        .emotion-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .emotion-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .emotion-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* Personality Radar (simple) */
+        .personality-list {
+            list-style: none;
+        }
+
+        .personality-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            font-size: 13px;
+        }
+
+        .personality-bar {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+
+        .personality-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        /* Timeline */
+        .timeline {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .timeline-item {
+            padding: 12px 0;
+            border-left: 2px solid var(--border);
+            padding-left: 16px;
+            margin-left: 8px;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 16px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+        }
+
+        .timeline-date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .timeline-content {
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table td {
+            padding: 10px 12px;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .data-table tr:hover td {
+            background: rgba(124, 92, 255, 0.05);
+        }
+
+        /* Progress Ring */
+        .progress-ring {
+            width: 80px;
+            height: 80px;
+            display: inline-block;
+        }
+
+        /* Chart simple (bar) */
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 100px;
+            padding: 8px 0;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(to top, var(--accent-primary), var(--accent-secondary));
+            border-radius: 4px 4px 0 0;
+            min-height: 2px;
+            transition: height 0.5s ease;
+            position: relative;
+        }
+
+        .chart-bar-label {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        /* Goal Progress */
+        .goal-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .goal-text {
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .goal-progress {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .goal-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-primary));
+            border-radius: 3px;
+        }
+
+        /* Pulse animation */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loading {
+            animation: pulse 1.5s infinite;
+            color: var(--text-muted);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(124, 92, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        /* API URL Config */
+        .config-bar {
+            display: flex;
+            gap: 8px;
+            padding: 8px 32px;
+            background: rgba(18, 18, 42, 0.4);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .config-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-left">
+            <span class="logo">⭐ STELLA Admin</span>
+            <span id="statusBadge" class="status-badge status-healthy">HEALTHY</span>
+        </div>
+        <div class="header-right">
+            <span id="lastUpdate">更新中...</span>
+            <button class="refresh-btn" onclick="fetchAll()">⟳ 更新</button>
+        </div>
+    </header>
+
+    <div class="config-bar">
+        <input class="config-input" id="apiUrl" value="http://localhost:8787" placeholder="API URL">
+    </div>
+
+    <nav class="nav">
+        <button class="nav-btn active" onclick="switchSection('overview')">📊 Overview</button>
+        <button class="nav-btn" onclick="switchSection('emotions')">🎭 感情</button>
+        <button class="nav-btn" onclick="switchSection('relationships')">💞 関係性</button>
+        <button class="nav-btn" onclick="switchSection('analytics')">📈 分析</button>
+        <button class="nav-btn" onclick="switchSection('params')">⚙️ パラメータ</button>
+        <button class="nav-btn" onclick="switchSection('health')">💊 ヘルス</button>
+        <button class="nav-btn" onclick="switchSection('knowledge')">📚 知識</button>
+        <button class="nav-btn" onclick="switchSection('diary')">📓 日記/夢</button>
+        <button class="nav-btn" onclick="switchSection('goals')">🎯 目標</button>
+        <button class="nav-btn" onclick="switchSection('costs')">💰 コスト</button>
+    </nav>
+
+    <main class="main">
+        <!-- Overview -->
+        <div id="overview" class="section active">
+            <div class="grid grid-4" style="margin-bottom: 16px">
+                <div class="card">
+                    <div class="card-icon">🎭</div>
+                    <div class="card-title">感情</div>
+                    <div class="card-value" id="ov_emotion">-</div>
+                    <div class="card-subtitle" id="ov_mood">読込中...</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">エネルギー</div>
+                    <div class="card-value" id="ov_energy">-</div>
+                    <div class="card-subtitle">活動エネルギー</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">💞</div>
+                    <div class="card-title">関係者数</div>
+                    <div class="card-value" id="ov_rels">-</div>
+                    <div class="card-subtitle">登録ユーザー</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🧠</div>
+                    <div class="card-title">知識量</div>
+                    <div class="card-value" id="ov_knowledge">-</div>
+                    <div class="card-subtitle">蓄積ファクト数</div>
+                </div>
+            </div>
+            <div class="grid grid-3" style="margin-bottom: 16px">
+                <div class="card">
+                    <div class="card-icon">📝</div>
+                    <div class="card-title">日記</div>
+                    <div class="card-value" id="ov_diary">-</div>
+                    <div class="card-subtitle">エントリー数</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">💤</div>
+                    <div class="card-title">夢</div>
+                    <div class="card-value" id="ov_dreams">-</div>
+                    <div class="card-subtitle">記録された夢</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔬</div>
+                    <div class="card-title">実験中</div>
+                    <div class="card-value" id="ov_experiments">-</div>
+                    <div class="card-subtitle">A/Bテスト</div>
+                </div>
+            </div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">🧬 性格特性 (Big Five)</div>
+                    <ul class="personality-list" id="ov_personality"></ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">📊 学習効率</div>
+                    <div id="ov_learning"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emotions -->
+        <div id="emotions" class="section">
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">🎭 基本感情</div>
+                    <div id="emotion_bars"></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">💕 複合感情</div>
+                    <div id="compound_emotions"></div>
+                </div>
+            </div>
+            <div class="grid grid-3" style="margin-top: 16px">
+                <div class="card">
+                    <div class="card-title">ムード</div>
+                    <div id="em_mood" style="font-size: 16px; margin-top: 8px;">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">エネルギー</div>
+                    <div id="em_energy" style="font-size: 32px; font-weight: 700;">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">安定性</div>
+                    <div id="em_stability" style="font-size: 32px; font-weight: 700;">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Relationships -->
+        <div id="relationships" class="section">
+            <div class="card">
+                <div class="card-title">💞 ユーザー関係性一覧</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ユーザーID</th>
+                            <th>タイプ</th>
+                            <th>親密度</th>
+                            <th>信頼度</th>
+                            <th>会話数</th>
+                            <th>呼び名</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rel_table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Analytics -->
+        <div id="analytics" class="section">
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">📈 人気コマンド TOP10</div>
+                    <div id="popular_commands"></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🕐 利用ピーク時間</div>
+                    <div id="peak_hours"></div>
+                </div>
+            </div>
+            <div class="grid grid-2" style="margin-top: 16px">
+                <div class="card">
+                    <div class="card-title">📊 DAU推移 (7日間)</div>
+                    <div class="chart-bars" id="dau_chart"></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">⚠️ 未使用機能</div>
+                    <div id="unused_commands" style="font-size: 13px; color: var(--text-secondary);">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parameters -->
+        <div id="params" class="section">
+            <div class="card" style="margin-bottom: 16px">
+                <div class="card-title">⚙️ 進化パラメータ</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>パラメータ</th>
+                            <th>現在値</th>
+                            <th>範囲</th>
+                            <th>説明</th>
+                        </tr>
+                    </thead>
+                    <tbody id="params_table"></tbody>
+                </table>
+            </div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">🧪 進行中の実験</div>
+                    <div id="experiments">なし</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">📜 変更履歴</div>
+                    <div class="timeline" id="param_history"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Health -->
+        <div id="health" class="section">
+            <div class="grid grid-4" style="margin-bottom: 16px">
+                <div class="card">
+                    <div class="card-title">ステータス</div>
+                    <div id="h_status" class="card-value" style="font-size: 24px;">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">稼働時間</div>
+                    <div id="h_uptime" class="card-value" style="font-size: 24px;">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">平均応答</div>
+                    <div id="h_response" class="card-value" style="font-size: 24px;">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">API呼出/今日</div>
+                    <div id="h_api" class="card-value" style="font-size: 24px;">-</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">⚠️ エラーパターン</div>
+                <div id="error_patterns">データなし</div>
+            </div>
+        </div>
+
+        <!-- Knowledge -->
+        <div id="knowledge" class="section">
+            <div class="grid grid-4" style="margin-bottom: 16px">
+                <div class="card">
+                    <div class="card-title">総ファクト数</div>
+                    <div id="k_total" class="card-value">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">高信頼度</div>
+                    <div id="k_high" class="card-value">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">トピック数</div>
+                    <div id="k_topics" class="card-value">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">最近追加</div>
+                    <div id="k_recent_count" class="card-value">-</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">📚 最近の知識</div>
+                <div id="knowledge_list">-</div>
+            </div>
+        </div>
+
+        <!-- Diary/Dreams -->
+        <div id="diary" class="section">
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">📓 最近の日記</div>
+                    <div class="timeline" id="diary_list"></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">💤 STELLAの夢</div>
+                    <div class="timeline" id="dream_list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Goals -->
+        <div id="goals" class="section">
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">🎯 今週の目標</div>
+                    <div id="goals_list"></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">✨ 自己肯定感</div>
+                    <div id="self_esteem"
+                        style="font-size: 48px; font-weight: 700; text-align: center; margin-top: 24px;">-</div>
+                    <div style="text-align: center; margin-top: 8px" id="completed_count">達成: -</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Costs -->
+        <div id="costs" class="section">
+            <div class="grid grid-3" style="margin-bottom: 16px">
+                <div class="card">
+                    <div class="card-title">今日のコスト</div>
+                    <div id="c_today" class="card-value" style="color: var(--accent-green);">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">月間合計</div>
+                    <div id="c_monthly" class="card-value">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">日平均</div>
+                    <div id="c_avg" class="card-value">-</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">💰 コスト推移 (14日間)</div>
+                <div class="chart-bars" id="cost_chart" style="height: 120px;"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const EMOTION_COLORS = {
+            joy: '#ffd95c', trust: '#5cffaa', fear: '#8855ff',
+            surprise: '#ff9955', sadness: '#5588ff', disgust: '#88cc55',
+            anger: '#ff5555', anticipation: '#ff55aa',
+        };
+        const EMOTION_LABELS = {
+            joy: '😊 喜び', trust: '🤝 信頼', fear: '😰 恐怖', surprise: '😲 驚き',
+            sadness: '😢 悲しみ', disgust: '🤢 嫌悪', anger: '😡 怒り', anticipation: '✨ 期待',
+        };
+        const PERSONALITY_LABELS = {
+            openness: '🌈 開放性', conscientiousness: '📐 誠実性',
+            extraversion: '🎉 外向性', agreeableness: '💛 協調性', neuroticism: '🌊 神経症',
+        };
+        const REL_TYPES = {
+            default: '👤 デフォルト', secretary: '💼 秘書', lover: '💕 恋人',
+            friend: '🤝 友達', rival: '⚔️ ライバル', mentor: '📚 先輩',
+        };
+
+        let apiBase = 'http://localhost:8787';
+
+        function switchSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function fetchJSON(endpoint) {
+            try {
+                apiBase = document.getElementById('apiUrl').value || 'http://localhost:8787';
+                const res = await fetch(`${apiBase}${endpoint}`);
+                return await res.json();
+            } catch (e) {
+                console.error(`API Error (${endpoint}):`, e);
+                return null;
+            }
+        }
+
+        function renderBar(value, color, max = 1.0) {
+            const pct = Math.min(100, (value / max) * 100);
+            return `<div class="emotion-bar"><div class="emotion-fill" style="width:${pct}%;background:${color}"></div></div>`;
+        }
+
+        async function fetchAll() {
+            document.getElementById('lastUpdate').textContent = '更新中...';
+
+            const [dashboard, emotions, rels, analytics, health, knowledge, diary, dreams, goals, params, costs] = await Promise.all([
+                fetchJSON('/api/dashboard'),
+                fetchJSON('/api/emotions'),
+                fetchJSON('/api/relationships'),
+                fetchJSON('/api/analytics'),
+                fetchJSON('/api/health'),
+                fetchJSON('/api/knowledge'),
+                fetchJSON('/api/diary'),
+                fetchJSON('/api/dreams'),
+                fetchJSON('/api/goals'),
+                fetchJSON('/api/params'),
+                fetchJSON('/api/costs'),
+            ]);
+
+            // Overview
+            if (dashboard) {
+                const evo = dashboard.evolution;
+                document.getElementById('ov_emotion').textContent = EMOTION_LABELS[evo.emotion]?.split(' ')[0] || '😐';
+                document.getElementById('ov_mood').textContent = evo.mood || '-';
+                document.getElementById('ov_energy').textContent = `${Math.round(evo.energy * 100)}%`;
+                document.getElementById('ov_rels').textContent = dashboard.stats.relationships;
+                document.getElementById('ov_knowledge').textContent = dashboard.internal?.status?.knowledge?.total_facts || 0;
+                document.getElementById('ov_diary').textContent = dashboard.stats.diary_entries;
+                document.getElementById('ov_dreams').textContent = dashboard.stats.dreams;
+                document.getElementById('ov_experiments').textContent = dashboard.internal?.status?.active_experiments || 0;
+
+                // Status badge
+                const badge = document.getElementById('statusBadge');
+                const hStatus = dashboard.internal?.health?.status || 'healthy';
+                badge.textContent = hStatus.toUpperCase();
+                badge.className = `status-badge status-${hStatus}`;
+
+                // Personality
+                const pList = document.getElementById('ov_personality');
+                pList.innerHTML = '';
+                for (const [key, val] of Object.entries(evo.personality || {})) {
+                    pList.innerHTML += `<li class="personality-item">
+                        <span style="width:80px;font-size:12px;">${PERSONALITY_LABELS[key] || key}</span>
+                        <div class="personality-bar"><div class="personality-fill" style="width:${val * 100}%"></div></div>
+                        <span style="width:35px;text-align:right;font-size:12px;">${(val * 100).toFixed(0)}%</span>
+                    </li>`;
+                }
+
+                // Learning efficiency
+                const meta = dashboard.internal?.meta || {};
+                const lDiv = document.getElementById('ov_learning');
+                lDiv.innerHTML = '';
+                for (const [k, v] of Object.entries(meta.learning_rates || {})) {
+                    lDiv.innerHTML += `<div class="stat-mini">
+                        <span class="stat-label">${k}</span>
+                        <span class="stat-value">${v.toFixed(4)}</span>
+                    </div>`;
+                }
+            }
+
+            // Emotions
+            if (emotions) {
+                const bars = document.getElementById('emotion_bars');
+                bars.innerHTML = '';
+                for (const [e, v] of Object.entries(emotions.values || {})) {
+                    bars.innerHTML += `<div class="emotion-bar-container">
+                        <div class="emotion-label"><span>${EMOTION_LABELS[e] || e}</span><span>${(v * 100).toFixed(0)}%</span></div>
+                        ${renderBar(v, EMOTION_COLORS[e] || '#888')}
+                    </div>`;
+                }
+                const comp = document.getElementById('compound_emotions');
+                if (emotions.compound && emotions.compound.length) {
+                    comp.innerHTML = emotions.compound.map(c =>
+                        `<div class="stat-mini"><span class="stat-label">${c}</span></div>`
+                    ).join('');
+                } else {
+                    comp.innerHTML = '<div style="color:var(--text-muted);font-size:13px">なし</div>';
+                }
+                document.getElementById('em_mood').textContent = emotions.mood || '-';
+                document.getElementById('em_energy').textContent = `${Math.round((emotions.energy || 0) * 100)}%`;
+                document.getElementById('em_stability').textContent = `${Math.round((emotions.stability || 0) * 100)}%`;
+            }
+
+            // Relationships
+            if (rels && rels.relationships) {
+                const tbody = document.getElementById('rel_table');
+                tbody.innerHTML = '';
+                for (const [uid, r] of Object.entries(rels.relationships)) {
+                    tbody.innerHTML += `<tr>
+                        <td>${uid}</td>
+                        <td>${REL_TYPES[r.type] || r.type}</td>
+                        <td>${r.affinity}</td>
+                        <td>${r.trust}</td>
+                        <td>${r.interaction_count}</td>
+                        <td>${r.nickname || '-'}</td>
+                    </tr>`;
+                }
+            }
+
+            // Analytics
+            if (analytics) {
+                const popDiv = document.getElementById('popular_commands');
+                if (analytics.popular && analytics.popular.length) {
+                    popDiv.innerHTML = analytics.popular.map(([cmd, count]) =>
+                        `<div class="stat-mini"><span class="stat-label">${cmd}</span><span class="stat-value">${count}</span></div>`
+                    ).join('');
+                } else {
+                    popDiv.innerHTML = '<div style="color:var(--text-muted)">データなし</div>';
+                }
+
+                const peakDiv = document.getElementById('peak_hours');
+                if (analytics.peak_hours && analytics.peak_hours.length) {
+                    peakDiv.innerHTML = `<div style="font-size:48px;font-weight:700;text-align:center;margin:20px 0">
+                        ${analytics.peak_hours.map(h => `${h}:00`).join(', ')}
+                    </div>`;
+                }
+
+                // DAU Chart
+                const dauChart = document.getElementById('dau_chart');
+                if (analytics.dau) {
+                    const vals = Object.values(analytics.dau);
+                    const maxVal = Math.max(...vals, 1);
+                    dauChart.innerHTML = Object.entries(analytics.dau).map(([day, count]) =>
+                        `<div class="chart-bar" style="height:${(count / maxVal) * 100}%">
+                            <span class="chart-bar-label">${day.slice(5)}</span>
+                        </div>`
+                    ).join('');
+                }
+
+                const unusedDiv = document.getElementById('unused_commands');
+                unusedDiv.textContent = (analytics.unused && analytics.unused.length)
+                    ? analytics.unused.join(', ')
+                    : 'すべて使用中 ✅';
+            }
+
+            // Params
+            if (params) {
+                const tbody = document.getElementById('params_table');
+                tbody.innerHTML = '';
+                for (const [key, val] of Object.entries(params.current || {})) {
+                    const def = params.definitions?.[key] || {};
+                    tbody.innerHTML += `<tr>
+                        <td><code>${key}</code></td>
+                        <td style="font-weight:600">${typeof val === 'number' ? val.toFixed(4) : val}</td>
+                        <td style="color:var(--text-muted)">${def.min ?? '-'} ~ ${def.max ?? '-'}</td>
+                        <td style="color:var(--text-secondary);font-size:12px">${def.description || '-'}</td>
+                    </tr>`;
+                }
+
+                const expDiv = document.getElementById('experiments');
+                if (params.experiments && Object.keys(params.experiments).length) {
+                    expDiv.innerHTML = Object.entries(params.experiments).map(([k, v]) =>
+                        `<div class="goal-item">
+                            <div class="goal-text"><strong>${k}</strong></div>
+                            <div style="font-size:12px;color:var(--text-secondary)">A: ${v.a?.toFixed(4)} (${v.a_trials} trials, score ${v.a_score?.toFixed(3)}) | B: ${v.b?.toFixed(4)} (${v.b_trials} trials, score ${v.b_score?.toFixed(3)})</div>
+                        </div>`
+                    ).join('');
+                } else {
+                    expDiv.innerHTML = '<div style="color:var(--text-muted)">実験なし</div>';
+                }
+
+                const histDiv = document.getElementById('param_history');
+                histDiv.innerHTML = (params.history || []).reverse().map(h =>
+                    `<div class="timeline-item">
+                        <div class="timeline-date">${h.date?.slice(0, 16)}</div>
+                        <div class="timeline-content">${h.param}: ${h.old?.toFixed(4)} → ${h.new?.toFixed(4)}</div>
+                    </div>`
+                ).join('') || '<div style="color:var(--text-muted)">履歴なし</div>';
+            }
+
+            // Health
+            if (health) {
+                document.getElementById('h_status').textContent = health.status?.toUpperCase() || '-';
+                document.getElementById('h_uptime').textContent = health.uptime || '-';
+                document.getElementById('h_response').textContent = health.avg_response_time || '-';
+                document.getElementById('h_api').textContent = health.api_calls_today || 0;
+
+                const errDiv = document.getElementById('error_patterns');
+                if (health.error_patterns && Object.keys(health.error_patterns).length) {
+                    errDiv.innerHTML = Object.entries(health.error_patterns).map(([type, count]) =>
+                        `<div class="stat-mini"><span class="stat-label">${type}</span><span class="stat-value" style="color:var(--accent-red)">${count}</span></div>`
+                    ).join('');
+                } else {
+                    errDiv.innerHTML = '<div style="color:var(--accent-green)">✅ エラーなし</div>';
+                }
+            }
+
+            // Knowledge
+            if (knowledge) {
+                const s = knowledge.stats || {};
+                document.getElementById('k_total').textContent = s.total_facts || 0;
+                document.getElementById('k_high').textContent = s.high_confidence || 0;
+                document.getElementById('k_topics').textContent = s.topics || 0;
+                document.getElementById('k_recent_count').textContent = s.recent_count || 0;
+
+                const kList = document.getElementById('knowledge_list');
+                if (knowledge.recent && knowledge.recent.length) {
+                    kList.innerHTML = knowledge.recent.filter(f => f.subject).map(f =>
+                        `<div class="stat-mini">
+                            <span class="stat-label">${f.subject} ${f.predicate} ${f.object}</span>
+                            <span class="stat-value" style="font-size:11px">${(f.confidence * 100).toFixed(0)}%</span>
+                        </div>`
+                    ).join('');
+                } else {
+                    kList.innerHTML = '<div style="color:var(--text-muted)">まだ知識なし</div>';
+                }
+            }
+
+            // Diary
+            if (diary && diary.diary) {
+                document.getElementById('diary_list').innerHTML = diary.diary.slice(-10).reverse().map(d =>
+                    `<div class="timeline-item">
+                        <div class="timeline-date">${d.date} [${d.mood || ''}]</div>
+                        <div class="timeline-content">${d.content?.slice(0, 150) || '-'}</div>
+                    </div>`
+                ).join('') || '<div style="color:var(--text-muted)">日記なし</div>';
+            }
+
+            // Dreams
+            if (dreams && dreams.dreams) {
+                document.getElementById('dream_list').innerHTML = dreams.dreams.slice(-10).reverse().map(d =>
+                    `<div class="timeline-item">
+                        <div class="timeline-date">${d.date} [${d.mood || ''}]</div>
+                        <div class="timeline-content">${d.content?.slice(0, 150) || '-'}</div>
+                    </div>`
+                ).join('') || '<div style="color:var(--text-muted)">夢なし</div>';
+            }
+
+            // Goals
+            if (goals) {
+                const gList = document.getElementById('goals_list');
+                if (goals.current && goals.current.length) {
+                    gList.innerHTML = goals.current.map(g => {
+                        const progress = goals.progress?.[g.metric] || 0;
+                        const pct = Math.min(100, (progress / g.target) * 100);
+                        return `<div class="goal-item">
+                            <div class="goal-text">${g.text} (${progress}/${g.target})</div>
+                            <div class="goal-progress"><div class="goal-fill" style="width:${pct}%"></div></div>
+                        </div>`;
+                    }).join('');
+                } else {
+                    gList.innerHTML = '<div style="color:var(--text-muted)">目標未設定</div>';
+                }
+
+                const esteem = goals.self_esteem || 0;
+                document.getElementById('self_esteem').textContent = `${(esteem * 100).toFixed(0)}%`;
+                document.getElementById('self_esteem').style.color = esteem > 0.7 ? 'var(--accent-green)' : esteem > 0.4 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+                document.getElementById('completed_count').textContent = `達成: ${goals.completed?.length || 0}個`;
+            }
+
+            // Costs
+            if (costs) {
+                document.getElementById('c_today').textContent = `$${(costs.today || 0).toFixed(4)}`;
+                if (costs.over_budget) document.getElementById('c_today').style.color = 'var(--accent-red)';
+                document.getElementById('c_monthly').textContent = `$${(costs.monthly?.total || 0).toFixed(4)}`;
+                document.getElementById('c_avg').textContent = `$${(costs.monthly?.avg_daily || 0).toFixed(4)}`;
+
+                const chart = document.getElementById('cost_chart');
+                if (costs.trend && costs.trend.length) {
+                    const maxC = Math.max(...costs.trend.map(t => t.cost), 0.001);
+                    chart.innerHTML = costs.trend.map(t =>
+                        `<div class="chart-bar" style="height:${(t.cost / maxC) * 100}%;${t.cost > (costs.budget_limit || 0.5) ? 'background:linear-gradient(var(--accent-red),#ff8855)' : ''}">
+                            <span class="chart-bar-label">${t.date.slice(5)}</span>
+                        </div>`
+                    ).join('');
+                }
+            }
+
+            document.getElementById('lastUpdate').textContent = `最終更新: ${new Date().toLocaleTimeString('ja-JP')}`;
+        }
+
+        // Auto-detect API URL
+        const savedUrl = localStorage.getItem('stella_api_url');
+        if (savedUrl) document.getElementById('apiUrl').value = savedUrl;
+        document.getElementById('apiUrl').addEventListener('change', (e) => {
+            localStorage.setItem('stella_api_url', e.target.value);
+        });
+
+        // Initial load
+        fetchAll();
+        // Auto refresh every 30s
+        setInterval(fetchAll, 30000);
+    </script>
+</body>
+
+</html>
