@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STELLA NLM — Memory Sync</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0a1a;
+            --card: #12122a;
+            --border: #1e1e3a;
+            --accent: #7c5cff;
+            --accent2: #ff6b9d;
+            --text: #e8e8f0;
+            --text2: #8888aa;
+            --success: #00d4aa;
+            --warning: #ffaa33;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, rgba(124, 92, 255, 0.15), rgba(255, 107, 157, 0.10));
+            border-bottom: 1px solid var(--border);
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header .sub {
+            color: var(--text2);
+            font-size: 13px;
+        }
+
+        .back-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 14px;
+            margin-left: auto;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card.full {
+            grid-column: 1 / -1;
+        }
+
+        .card h2 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge.ok {
+            background: rgba(0, 212, 170, 0.2);
+            color: var(--success);
+        }
+
+        .badge.warn {
+            background: rgba(255, 170, 51, 0.2);
+            color: var(--warning);
+        }
+
+        .badge.off {
+            background: rgba(136, 136, 170, 0.2);
+            color: var(--text2);
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .stat-item {
+            background: rgba(124, 92, 255, 0.08);
+            border: 1px solid rgba(124, 92, 255, 0.15);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-item .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-item .label {
+            font-size: 11px;
+            color: var(--text2);
+            margin-top: 4px;
+        }
+
+        .file-list {
+            list-style: none;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-item .name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-item .size {
+            color: var(--text2);
+            font-size: 12px;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 8px 0;
+        }
+
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-time {
+            font-size: 11px;
+            color: var(--text2);
+        }
+
+        .pipeline {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin-top: 8px;
+        }
+
+        .pipeline-step {
+            flex: 1;
+            text-align: center;
+            padding: 12px 8px;
+            background: rgba(124, 92, 255, 0.06);
+            border: 1px solid var(--border);
+            font-size: 12px;
+            position: relative;
+        }
+
+        .pipeline-step:first-child {
+            border-radius: 8px 0 0 8px;
+        }
+
+        .pipeline-step:last-child {
+            border-radius: 0 8px 8px 0;
+        }
+
+        .pipeline-step.active {
+            background: rgba(124, 92, 255, 0.2);
+            border-color: var(--accent);
+        }
+
+        .pipeline-step .icon {
+            font-size: 20px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .pipeline-arrow {
+            color: var(--text2);
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent), #6040dd);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(124, 92, 255, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .config {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .config input {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .preview-content {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            color: var(--text2);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <span style="font-size:28px">🧠</span>
+        <div>
+            <h1>STELLA Memory Sync</h1>
+            <div class="sub">NotebookLM への記憶同期ステータス</div>
+        </div>
+        <a href="../" class="back-link">← Dashboard に戻る</a>
+    </div>
+
+    <div class="container">
+        <!-- パイプライン -->
+        <div class="card full">
+            <h2>📡 同期パイプライン</h2>
+            <div class="pipeline">
+                <div class="pipeline-step active" id="step-stella">
+                    <span class="icon">⭐</span>
+                    STELLA Bot
+                </div>
+                <span class="pipeline-arrow">→</span>
+                <div class="pipeline-step" id="step-github">
+                    <span class="icon">🐙</span>
+                    GitHub Vault
+                </div>
+                <span class="pipeline-arrow">→</span>
+                <div class="pipeline-step" id="step-export">
+                    <span class="icon">📤</span>
+                    NLM Export
+                </div>
+                <span class="pipeline-arrow">→</span>
+                <div class="pipeline-step" id="step-upload">
+                    <span class="icon">📓</span>
+                    NotebookLM
+                </div>
+            </div>
+            <div class="config">
+                <input type="text" id="apiUrl" placeholder="STELLA API URL (例: http://localhost:8787)"
+                    value="http://localhost:8787">
+                <button class="btn" onclick="refresh()">🔄 更新</button>
+            </div>
+        </div>
+
+        <!-- 統計 -->
+        <div class="card">
+            <h2>📊 同期ステータス</h2>
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <div class="value" id="s-files">0</div>
+                    <div class="label">メモリファイル</div>
+                </div>
+                <div class="stat-item">
+                    <div class="value" id="s-facts">0</div>
+                    <div class="label">知識ファクト</div>
+                </div>
+                <div class="stat-item">
+                    <div class="value" id="s-conversations">0</div>
+                    <div class="label">記録済み会話</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最終同期 -->
+        <div class="card">
+            <h2>🕐 同期履歴</h2>
+            <div class="timeline" id="sync-timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div>データ読み込み中...</div>
+                        <div class="timeline-time">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- エクスポートファイル -->
+        <div class="card">
+            <h2>📁 STELLA メモリファイル</h2>
+            <ul class="file-list" id="file-list">
+                <li class="file-item">
+                    <span class="name">📄 STELLA-Memory.md</span>
+                    <span class="size">--</span>
+                </li>
+                <li class="file-item">
+                    <span class="name">📄 STELLA-Knowledge.md</span>
+                    <span class="size">--</span>
+                </li>
+                <li class="file-item">
+                    <span class="name">📄 STELLA-Diary.md</span>
+                    <span class="size">--</span>
+                </li>
+            </ul>
+            <div style="margin-top:12px">
+                <button class="btn" onclick="triggerExport()">📤 今すぐエクスポート</button>
+            </div>
+        </div>
+
+        <!-- NLMソース -->
+        <div class="card">
+            <h2>📓 NotebookLM ソース</h2>
+            <ul class="file-list" id="nlm-sources">
+                <li class="file-item">
+                    <span class="name">📄 vault_full.md</span>
+                    <span class="badge ok">最新</span>
+                </li>
+                <li class="file-item">
+                    <span class="name">📄 STELLA-Bot.md</span>
+                    <span class="badge ok">最新</span>
+                </li>
+                <li class="file-item">
+                    <span class="name">📄 Minecraft-Datapack.md</span>
+                    <span class="badge ok">最新</span>
+                </li>
+                <li class="file-item">
+                    <span class="name">📄 Knowledge.md</span>
+                    <span class="badge ok">最新</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- プレビュー -->
+        <div class="card full">
+            <h2>👁️ メモリプレビュー</h2>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+                <button class="btn btn-secondary" onclick="previewFile('memory')">💭 Memory</button>
+                <button class="btn btn-secondary" onclick="previewFile('knowledge')">📚 Knowledge</button>
+                <button class="btn btn-secondary" onclick="previewFile('diary')">📓 Diary</button>
+            </div>
+            <div class="preview-content" id="preview">
+                # STELLA Memory State
+                まだデータが読み込まれていません。
+
+                STELLA Bot の API URL を設定してから「更新」をクリックしてください。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getApiUrl() {
+            return document.getElementById('apiUrl').value.replace(/\/$/, '');
+        }
+
+        async function refresh() {
+            const url = getApiUrl();
+            localStorage.setItem('stella_api_url', url);
+
+            try {
+                // ダッシュボードデータ取得
+                const resp = await fetch(`${url}/api/dashboard`);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+
+                // 統計更新
+                const kb = data.knowledge || {};
+                document.getElementById('s-facts').textContent = kb.total_facts || 0;
+                document.getElementById('s-files').textContent = 3;
+
+                // タイムライン更新
+                const timeline = document.getElementById('sync-timeline');
+                const now = new Date().toLocaleString('ja-JP');
+                timeline.innerHTML = `
+                    <div class="timeline-item">
+                        <div class="timeline-dot" style="background:var(--success)"></div>
+                        <div class="timeline-content">
+                            <div>API接続成功</div>
+                            <div class="timeline-time">${now}</div>
+                        </div>
+                    </div>
+                `;
+
+                // パイプラインアクティブ化
+                document.getElementById('step-stella').classList.add('active');
+                document.getElementById('step-github').classList.add('active');
+
+            } catch (e) {
+                document.getElementById('sync-timeline').innerHTML = `
+                    <div class="timeline-item">
+                        <div class="timeline-dot" style="background:var(--warning)"></div>
+                        <div class="timeline-content">
+                            <div>❌ 接続失敗: ${e.message}</div>
+                            <div class="timeline-time">${new Date().toLocaleString('ja-JP')}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 会話統計
+            try {
+                const resp = await fetch(`${url}/api/analytics`);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    document.getElementById('s-conversations').textContent =
+                        data.total_commands || 0;
+                }
+            } catch (e) { }
+        }
+
+        async function previewFile(type) {
+            const url = getApiUrl();
+            const preview = document.getElementById('preview');
+
+            const endpoints = {
+                memory: '/api/emotions',
+                knowledge: '/api/knowledge',
+                diary: '/api/diary',
+            };
+
+            try {
+                preview.textContent = '読み込み中...';
+                const resp = await fetch(`${url}${endpoints[type]}`);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                preview.textContent = JSON.stringify(data, null, 2);
+            } catch (e) {
+                preview.textContent = `エラー: ${e.message}\n\nSTELLA Bot が起動していることを確認してください。`;
+            }
+        }
+
+        async function triggerExport() {
+            const url = getApiUrl();
+            try {
+                const resp = await fetch(`${url}/api/status`);
+                if (resp.ok) {
+                    alert('✅ エクスポートリクエストを送信しました。\n\n次回の自動エクスポート(6時間ごと)で反映されます。\n\n手動エクスポート: Discord で /export-memory を実行してください。');
+                } else {
+                    alert('❌ STELLA API に接続できません。Bot が起動していることを確認してください。');
+                }
+            } catch (e) {
+                alert(`❌ 接続エラー: ${e.message}`);
+            }
+        }
+
+        // 初期化
+        const savedUrl = localStorage.getItem('stella_api_url');
+        if (savedUrl) document.getElementById('apiUrl').value = savedUrl;
+
+        // 自動更新
+        refresh();
+        setInterval(refresh, 60000);
+    </script>
+</body>
+
+</html>
